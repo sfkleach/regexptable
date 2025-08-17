@@ -1,0 +1,72 @@
+{
+    "name": "RegexTable Go Development",
+    "image": "mcr.microsoft.com/devcontainers/go:1-1.24-bookworm",
+    
+    "features": {
+        "ghcr.io/devcontainers/features/github-cli:1": {},
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+        "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
+            "packages": "curl,wget,git,make"
+        }
+    },
+
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "go.toolsManagement.checkForUpdates": "local",
+                "go.useLanguageServer": true,
+                "go.gopath": "/go",
+                "go.goroot": "/usr/local/go",
+                "go.lintTool": "golangci-lint",
+                "go.lintOnSave": "package",
+                "go.formatTool": "goimports",
+                "go.generateTestsFlags": ["-exported"],
+                "editor.formatOnSave": true,
+                "editor.codeActionsOnSave": {
+                    "source.organizeImports": "explicit"
+                },
+                "files.eol": "\n"
+            },
+            "extensions": [
+                "golang.go",
+                "ms-vscode.vscode-json",
+                "redhat.vscode-yaml",
+                "ms-vsliveshare.vsliveshare",
+                "GitHub.copilot",
+                "GitHub.copilot-chat",
+                "ms-vscode.test-adapter-converter",
+                "hbenl.vscode-test-explorer"
+            ]
+        }
+    },
+
+    "onCreateCommand": "go version",
+    
+    "postCreateCommand": [
+        "bash",
+        "-c",
+        "curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest"
+    ],
+    
+    "postAttachCommand": [
+        "bash",
+        "-c",
+        "curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin && go install golang.org/x/tools/cmd/goimports@latest && go mod download"
+    ],
+
+    "remoteUser": "vscode",
+    
+    "mounts": [
+        "source=${localWorkspaceFolder}/.git,target=/workspaces/regextable/.git,type=bind,consistency=cached"
+    ],
+
+    "forwardPorts": [],
+    
+    "portsAttributes": {},
+
+    "containerEnv": {
+        "CGO_ENABLED": "0",
+        "GOOS": "linux",
+        "GOARCH": "amd64"
+    }
+}
