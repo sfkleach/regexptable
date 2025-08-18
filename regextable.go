@@ -31,8 +31,9 @@ import (
 
 // ValueAndPattern holds both the value and original pattern for a regex group.
 type ValueAndPattern[T any] struct {
-	Value   T
-	Pattern string
+	Value           T
+	Pattern         string
+	compiledPattern CompiledRegex // Cached compiled pattern for disambiguation
 }
 
 // RegexTable provides efficient multi-pattern regex classification using a pluggable regex engine.
@@ -212,11 +213,21 @@ func (rt *RegexTable[T]) Lookup(input string) (T, []string, error) {
 	for i, name := range subexpNames {
 		if name != "" && i < len(matches) {
 			if valueAndPattern, exists := rt.lookup[name]; exists {
-				// Create a regex for just this pattern with proper anchoring
-				individualPattern := rt.anchorPattern(valueAndPattern.Pattern)
-				individualRegex, err := rt.engine.Compile(individualPattern)
-				if err != nil {
-					continue // Skip invalid patterns
+				// Use cached compiled pattern or compile on-demand
+				var individualRegex CompiledRegex
+				if valueAndPattern.compiledPattern != nil {
+					individualRegex = valueAndPattern.compiledPattern
+				} else {
+					// Compile and cache the pattern
+					individualPattern := rt.anchorPattern(valueAndPattern.Pattern)
+					compiledRegex, err := rt.engine.Compile(individualPattern)
+					if err != nil {
+						continue // Skip invalid patterns
+					}
+					// Cache the compiled pattern (note: this modifies the map entry)
+					valueAndPattern.compiledPattern = compiledRegex
+					rt.lookup[name] = valueAndPattern
+					individualRegex = compiledRegex
 				}
 
 				// Test if this individual pattern matches

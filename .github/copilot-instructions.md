@@ -16,6 +16,12 @@ regex and extract the corresponding value for the matched key.
 This package abstracts over different regex engines. We can use a 
 RegexTableBuilder to construct regex tables efficiently.
 
+## Ad hoc tests
+
+- When trying to verify new functionality, avoid creating new files that need
+  subsequent deletion. Instead, prefer use existing test files and add new test cases
+  as needed. (VSCode gets confused by them too easily.)
+
 ## Programming Guidelines
 
 - Comments should be proper sentences, with correct grammar and punctuation,
