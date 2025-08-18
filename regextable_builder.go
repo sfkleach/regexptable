@@ -50,7 +50,7 @@ func (b *RegexTableBuilder[T]) Build(anchorStart, anchorEnd bool) (*RegexTable[T
 
 	// Add all patterns to the table (using lazy compilation)
 	for _, entry := range b.patterns {
-		_, err := table.AddPattern(entry.pattern, entry.value)
+		err := table.AddPattern(entry.pattern, entry.value)
 		if err != nil {
 			return nil, fmt.Errorf("invalid pattern '%s': %w", entry.pattern, err)
 		}

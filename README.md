@@ -164,21 +164,13 @@ Creates a new empty RegexTable for values of type T using the standard Go regex 
 #### `NewRegexTableWithEngine[T any](engine RegexEngine) *RegexTable[T]`
 Creates a new empty RegexTable using a custom regex engine.
 
-#### `AddPattern(pattern string, value T) (int, error)`
-Adds a regex pattern with its associated value to the table. Returns the pattern ID for later removal.
+#### `AddPattern(pattern string, value T) error`
+Adds a regex pattern with its associated value to the table.
 **Note**: This method uses lazy compilation - the regex is not compiled until lookup is performed.
 
-#### `AddPatternThenRecompile(pattern string, value T) (int, error)`
+#### `AddPatternThenRecompile(pattern string, value T) error`
 Like AddPattern but immediately recompiles the regex. Use this when you need immediate validation 
 of the pattern or when you're only adding one pattern.
-
-#### `RemovePattern(patternID int) error`
-Removes a pattern from the table by its ID.
-**Note**: This method uses lazy compilation - the regex is not recompiled until lookup is performed.
-
-#### `RemovePatternThenRecompile(patternID int) error`
-Like RemovePattern but immediately recompiles the regex. Use this when you need immediate validation
-or when you're only removing one pattern.
 
 #### `Recompile() error`
 Manually rebuilds the union regex from all registered patterns. This is exposed to allow manual 
@@ -199,28 +191,13 @@ Returns true if the table has any patterns configured.
 ### Adding Patterns
 
 ```go
-table := regextable.NewRegexTable[string]()
+table := regextable.NewRegexTable[string](true, false) // start anchored, not end anchored
 
-// Returns pattern ID for later removal
-id, err := table.AddPattern(`\d+`, "number")
+err := table.AddPattern(`\d+`, "number")
 if err != nil {
     // Handle regex compilation error
 }
 ```
-
-### Removing Patterns
-
-```go
-// Remove by pattern ID
-err := table.RemovePattern(id)
-if err != nil {
-    // Handle removal error (pattern not found)
-}
-```
-
-### Pattern IDs
-
-Pattern IDs are auto-generated integers starting from 1. They're used internally with the format `__REGEXTABLE_N__` where N is the ID. This reserved namespace prevents conflicts with user-defined capture groups.
 
 ## Error Handling
 

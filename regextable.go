@@ -37,7 +37,7 @@ type RegexTable[T any] struct {
 	values         map[string]T
 	patterns       map[string]string // Maps group names to original patterns
 	patternNames   []string
-	nextID         int
+	nextGroupID    int
 	needsRecompile bool
 	anchorStart    bool // Whether to anchor patterns to start of string with ^
 	anchorEnd      bool // Whether to anchor patterns to end of string with $
@@ -55,7 +55,7 @@ func NewRegexTableWithEngine[T any](engine RegexEngine, anchorStart, anchorEnd b
 		values:         make(map[string]T),
 		patterns:       make(map[string]string),
 		patternNames:   make([]string, 0),
-		nextID:         1,
+		nextGroupID:    1,
 		needsRecompile: false,
 		anchorStart:    anchorStart,
 		anchorEnd:      anchorEnd,
@@ -63,13 +63,11 @@ func NewRegexTableWithEngine[T any](engine RegexEngine, anchorStart, anchorEnd b
 }
 
 // AddPattern adds a new regex pattern with its associated value to the table.
-// Returns the pattern ID (for use with RemovePattern) and an error if regex compilation fails.
 // This method defers recompilation until Lookup is called for better performance.
-func (rt *RegexTable[T]) AddPattern(pattern string, value T) (int, error) {
+func (rt *RegexTable[T]) AddPattern(pattern string, value T) error {
 	// Auto-generate a unique internal name
-	patternID := rt.nextID
-	groupName := fmt.Sprintf("__REGEXTABLE_%d__", patternID)
-	rt.nextID++
+	groupName := fmt.Sprintf("__REGEXTABLE_%d__", rt.nextGroupID)
+	rt.nextGroupID++
 
 	// Create a unique capture group name using the engine's syntax
 	namedPattern := rt.engine.FormatNamedGroup(groupName, pattern)
@@ -79,58 +77,23 @@ func (rt *RegexTable[T]) AddPattern(pattern string, value T) (int, error) {
 	rt.patterns[groupName] = pattern // Store the original pattern
 	rt.needsRecompile = true
 
-	return patternID, nil
+	return nil
 }
 
 // AddPatternThenRecompile is like AddPattern but immediately recompiles the regex.
 // Use this when you need immediate validation of the pattern or when you're only adding one pattern.
-func (rt *RegexTable[T]) AddPatternThenRecompile(pattern string, value T) (int, error) {
-	patternID, err := rt.AddPattern(pattern, value)
-	if err != nil {
-		return 0, err
-	}
-
-	err = rt.Recompile()
-	if err != nil {
-		return 0, err
-	}
-
-	return patternID, nil
-}
-
-// RemovePattern removes a pattern from the table by its ID.
-// This method defers recompilation until Lookup is called for better performance.
-func (rt *RegexTable[T]) RemovePattern(patternID int) error {
-	groupName := fmt.Sprintf("__REGEXTABLE_%d__", patternID)
-
-	if _, exists := rt.values[groupName]; !exists {
-		return fmt.Errorf("pattern ID %d does not exist", patternID)
-	}
-
-	delete(rt.values, groupName)
-	delete(rt.patterns, groupName) // Remove from patterns map too
-
-	// Remove from pattern names slice
-	for i, pName := range rt.patternNames {
-		if strings.Contains(pName, groupName) {
-			rt.patternNames = append(rt.patternNames[:i], rt.patternNames[i+1:]...)
-			break
-		}
-	}
-
-	rt.needsRecompile = true
-	return nil
-}
-
-// RemovePatternThenRecompile is like RemovePattern but immediately recompiles the regex.
-// Use this when you need immediate validation or when you're only removing one pattern.
-func (rt *RegexTable[T]) RemovePatternThenRecompile(patternID int) error {
-	err := rt.RemovePattern(patternID)
+func (rt *RegexTable[T]) AddPatternThenRecompile(pattern string, value T) error {
+	err := rt.AddPattern(pattern, value)
 	if err != nil {
 		return err
 	}
 
-	return rt.Recompile()
+	err = rt.Recompile()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // HasPatterns returns true if the table has any patterns configured.

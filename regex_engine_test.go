@@ -116,7 +116,7 @@ func TestRegexTable_WithCustomEngine(t *testing.T) {
 	table := NewRegexTableWithEngine[string](mockEngine, true, false)
 
 	// Add a pattern - this should use the .NET syntax
-	_, err := table.AddPattern("hello", "greeting")
+	err := table.AddPattern("hello", "greeting")
 	if err != nil {
 		t.Fatalf("Failed to add pattern: %v", err)
 	}

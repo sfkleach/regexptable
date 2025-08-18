@@ -18,17 +18,17 @@ func TestRegexTable_Basic(t *testing.T) {
 	table := NewRegexTable[TokenType](true, false) // Start anchoring, no end anchoring
 
 	// Add some test patterns using deferred compilation
-	_, err := table.AddPattern(`form\w*`, TokenFormStart)
+	err := table.AddPattern(`form\w*`, TokenFormStart)
 	if err != nil {
 		t.Fatalf("Failed to add form_start pattern: %v", err)
 	}
 
-	_, err = table.AddPattern(`end\w*`, TokenFormEnd)
+	err = table.AddPattern(`end\w*`, TokenFormEnd)
 	if err != nil {
 		t.Fatalf("Failed to add form_end pattern: %v", err)
 	}
 
-	_, err = table.AddPattern(`[a-z]+:`, TokenSimpleLabel)
+	err = table.AddPattern(`[a-z]+:`, TokenSimpleLabel)
 	if err != nil {
 		t.Fatalf("Failed to add simple_label pattern: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestRegexTable_Basic(t *testing.T) {
 func TestRegexTable_TryLookup(t *testing.T) {
 	table := NewRegexTable[string](true, false) // Start anchoring, no end anchoring
 
-	_, err := table.AddPattern(`hello`, "greeting")
+	err := table.AddPattern(`hello`, "greeting")
 	if err != nil {
 		t.Fatalf("Failed to add pattern: %v", err)
 	}
@@ -107,62 +107,18 @@ func TestRegexTable_TryLookup(t *testing.T) {
 	}
 }
 
-func TestRegexTable_RemovePattern(t *testing.T) {
-	table := NewRegexTable[int](true, false) // Start anchoring, no end anchoring
-
-	id1, err := table.AddPattern(`foo`, 1)
-	if err != nil {
-		t.Fatalf("Failed to add pattern: %v", err)
-	}
-
-	id2, err := table.AddPattern(`bar`, 2)
-	if err != nil {
-		t.Fatalf("Failed to add pattern: %v", err)
-	}
-	_ = id2 // We keep this pattern for testing
-
-	// Verify both patterns work
-	value, _, err := table.Lookup("foo")
-	if err != nil || value != 1 {
-		t.Error("Pattern test1 should match")
-	}
-
-	value, _, err = table.Lookup("bar")
-	if err != nil || value != 2 {
-		t.Error("Pattern test2 should match")
-	}
-
-	// Remove first pattern
-	err = table.RemovePattern(id1)
-	if err != nil {
-		t.Fatalf("Failed to remove pattern: %v", err)
-	}
-
-	// Verify first pattern no longer works
-	_, _, err = table.Lookup("foo")
-	if err == nil {
-		t.Error("Pattern test1 should no longer match after removal")
-	}
-
-	// Verify second pattern still works
-	value, _, err = table.Lookup("bar")
-	if err != nil || value != 2 {
-		t.Error("Pattern test2 should still match after removing test1")
-	}
-}
-
 func TestRegexTable_LazyVsImmediateCompilation(t *testing.T) {
 	// Test lazy compilation
 	lazy := NewRegexTable[string](true, false) // Start anchoring, no end anchoring
 
 	// These should succeed without compilation
-	_, err := lazy.AddPattern("valid", "value1")
+	err := lazy.AddPattern("valid", "value1")
 	if err != nil {
 		t.Errorf("Lazy AddPattern should succeed: %v", err)
 	}
 
 	// This should fail at classification time, not add time
-	_, err = lazy.AddPattern("[invalid", "value2") // Invalid regex
+	err = lazy.AddPattern("[invalid", "value2") // Invalid regex
 	if err != nil {
 		t.Errorf("Lazy AddPattern should defer validation: %v", err)
 	}
@@ -177,13 +133,13 @@ func TestRegexTable_LazyVsImmediateCompilation(t *testing.T) {
 	immediate := NewRegexTable[string](true, false) // Start anchoring, no end anchoring
 
 	// Valid pattern should succeed
-	_, err = immediate.AddPatternThenRecompile("valid", "value1")
+	err = immediate.AddPatternThenRecompile("valid", "value1")
 	if err != nil {
 		t.Errorf("Immediate AddPattern should succeed: %v", err)
 	}
 
 	// Invalid pattern should fail immediately
-	_, err = immediate.AddPatternThenRecompile("[invalid", "value2") // Invalid regex
+	err = immediate.AddPatternThenRecompile("[invalid", "value2") // Invalid regex
 	if err == nil {
 		t.Error("Expected immediate AddPattern to fail with invalid regex")
 	}
@@ -193,12 +149,12 @@ func TestRegexTable_ManualRecompile(t *testing.T) {
 	table := NewRegexTable[string](true, false) // Start anchoring, no end anchoring
 
 	// Add patterns without compilation
-	_, err := table.AddPattern("hello", "greeting")
+	err := table.AddPattern("hello", "greeting")
 	if err != nil {
 		t.Fatalf("Failed to add pattern: %v", err)
 	}
 
-	_, err = table.AddPattern("world", "place")
+	err = table.AddPattern("world", "place")
 	if err != nil {
 		t.Fatalf("Failed to add pattern: %v", err)
 	}
@@ -219,48 +175,12 @@ func TestRegexTable_ManualRecompile(t *testing.T) {
 	}
 }
 
-func TestRegexTable_RemovePatternThenRecompile(t *testing.T) {
-	table := NewRegexTable[string](true, false) // Start anchoring, no end anchoring
-
-	// Add patterns using immediate compilation
-	id1, err := table.AddPatternThenRecompile("hello", "greeting")
-	if err != nil {
-		t.Fatalf("Failed to add pattern: %v", err)
-	}
-
-	_, err = table.AddPatternThenRecompile("world", "place")
-	if err != nil {
-		t.Fatalf("Failed to add pattern: %v", err)
-	}
-
-	// Remove pattern with immediate recompilation
-	err = table.RemovePatternThenRecompile(id1)
-	if err != nil {
-		t.Fatalf("Failed to remove pattern: %v", err)
-	}
-
-	// Verify the pattern is gone
-	_, _, err = table.Lookup("hello")
-	if err == nil {
-		t.Error("Expected hello pattern to be removed")
-	}
-
-	// Verify other pattern still works
-	value, _, err := table.Lookup("world")
-	if err != nil {
-		t.Fatalf("World pattern should still work: %v", err)
-	}
-	if value != "place" {
-		t.Errorf("Expected 'place', got '%s'", value)
-	}
-}
-
 func TestRegexTable_AnchoringOptions(t *testing.T) {
 	// Test default anchoring (start anchored, not end anchored)
 	t.Run("DefaultAnchoring", func(t *testing.T) {
 		table := NewRegexTable[string](true, false) // Start anchoring, no end anchoring
 
-		_, err := table.AddPattern("hello", "greeting")
+		err := table.AddPattern("hello", "greeting")
 		if err != nil {
 			t.Fatalf("Failed to add pattern: %v", err)
 		}
@@ -292,7 +212,7 @@ func TestRegexTable_AnchoringOptions(t *testing.T) {
 	t.Run("NoAnchoring", func(t *testing.T) {
 		table := NewRegexTableWithEngine[string](&StandardRegexEngine{}, false, false)
 
-		_, err := table.AddPattern("hello", "greeting")
+		err := table.AddPattern("hello", "greeting")
 		if err != nil {
 			t.Fatalf("Failed to add pattern: %v", err)
 		}
@@ -313,7 +233,7 @@ func TestRegexTable_AnchoringOptions(t *testing.T) {
 	t.Run("FullAnchoring", func(t *testing.T) {
 		table := NewRegexTableWithEngine[string](&StandardRegexEngine{}, true, true)
 
-		_, err := table.AddPattern("hello", "greeting")
+		err := table.AddPattern("hello", "greeting")
 		if err != nil {
 			t.Fatalf("Failed to add pattern: %v", err)
 		}
@@ -340,7 +260,7 @@ func TestRegexTable_AnchoringOptions(t *testing.T) {
 	t.Run("EndAnchoringOnly", func(t *testing.T) {
 		table := NewRegexTableWithEngine[string](&StandardRegexEngine{}, false, true)
 
-		_, err := table.AddPattern("world", "place")
+		err := table.AddPattern("world", "place")
 		if err != nil {
 			t.Fatalf("Failed to add pattern: %v", err)
 		}
