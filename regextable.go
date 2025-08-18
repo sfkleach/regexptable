@@ -29,13 +29,18 @@ import (
 	"strings"
 )
 
+// ValueAndPattern holds both the value and original pattern for a regex group.
+type ValueAndPattern[T any] struct {
+	Value   T
+	Pattern string
+}
+
 // RegexTable provides efficient multi-pattern regex classification using a pluggable regex engine.
 // It compiles multiple regex patterns into a single automaton for optimal performance.
 type RegexTable[T any] struct {
 	engine         RegexEngine
 	compiled       CompiledRegex
-	values         map[string]T
-	patterns       map[string]string // Maps group names to original patterns
+	lookup         map[string]ValueAndPattern[T] // Maps group names to values and original patterns
 	patternNames   []string
 	nextGroupID    int
 	needsRecompile bool
@@ -52,8 +57,7 @@ func NewRegexTable[T any](anchorStart, anchorEnd bool) *RegexTable[T] {
 func NewRegexTableWithEngine[T any](engine RegexEngine, anchorStart, anchorEnd bool) *RegexTable[T] {
 	return &RegexTable[T]{
 		engine:         engine,
-		values:         make(map[string]T),
-		patterns:       make(map[string]string),
+		lookup:         make(map[string]ValueAndPattern[T]),
 		patternNames:   make([]string, 0),
 		nextGroupID:    1,
 		needsRecompile: false,
@@ -73,8 +77,10 @@ func (rt *RegexTable[T]) AddPattern(pattern string, value T) error {
 	namedPattern := rt.engine.FormatNamedGroup(groupName, pattern)
 
 	rt.patternNames = append(rt.patternNames, namedPattern)
-	rt.values[groupName] = value
-	rt.patterns[groupName] = pattern // Store the original pattern
+	rt.lookup[groupName] = ValueAndPattern[T]{
+		Value:   value,
+		Pattern: pattern,
+	}
 	rt.needsRecompile = true
 
 	return nil
@@ -119,12 +125,12 @@ func (rt *RegexTable[T]) anchorPattern(pattern string) string {
 func (rt *RegexTable[T]) validatePatterns() []string {
 	var invalidPatterns []string
 
-	for groupName, originalPattern := range rt.patterns {
+	for groupName, valueAndPattern := range rt.lookup {
 		// Try to compile this pattern individually with proper anchoring
-		anchoredPattern := rt.anchorPattern(originalPattern)
+		anchoredPattern := rt.anchorPattern(valueAndPattern.Pattern)
 		_, err := rt.engine.Compile(anchoredPattern)
 		if err != nil {
-			invalidPatterns = append(invalidPatterns, fmt.Sprintf("group %s (pattern: %s): %v", groupName, originalPattern, err))
+			invalidPatterns = append(invalidPatterns, fmt.Sprintf("group %s (pattern: %s): %v", groupName, valueAndPattern.Pattern, err))
 		}
 	}
 
@@ -194,8 +200,8 @@ func (rt *RegexTable[T]) Lookup(input string) (T, []string, error) {
 		// Defensive check: ensure we don't exceed matches slice bounds
 		// (SubexpNames and matches should have same length, but we use pluggable engines)
 		if name != "" && i < len(matches) && matches[i] != "" {
-			if value, exists := rt.values[name]; exists {
-				return value, matches, nil
+			if valueAndPattern, exists := rt.lookup[name]; exists {
+				return valueAndPattern.Value, matches, nil
 			}
 		}
 	}
@@ -205,20 +211,17 @@ func (rt *RegexTable[T]) Lookup(input string) (T, []string, error) {
 	// makes it impossible to distinguish which group actually matched
 	for i, name := range subexpNames {
 		if name != "" && i < len(matches) {
-			if value, exists := rt.values[name]; exists {
-				// Get the original pattern for this group
-				if originalPattern, patternExists := rt.patterns[name]; patternExists {
-					// Create a regex for just this pattern with proper anchoring
-					individualPattern := rt.anchorPattern(originalPattern)
-					individualRegex, err := rt.engine.Compile(individualPattern)
-					if err != nil {
-						continue // Skip invalid patterns
-					}
+			if valueAndPattern, exists := rt.lookup[name]; exists {
+				// Create a regex for just this pattern with proper anchoring
+				individualPattern := rt.anchorPattern(valueAndPattern.Pattern)
+				individualRegex, err := rt.engine.Compile(individualPattern)
+				if err != nil {
+					continue // Skip invalid patterns
+				}
 
-					// Test if this individual pattern matches
-					if individualMatches := individualRegex.FindStringSubmatch(input); individualMatches != nil {
-						return value, matches, nil
-					}
+				// Test if this individual pattern matches
+				if individualMatches := individualRegex.FindStringSubmatch(input); individualMatches != nil {
+					return valueAndPattern.Value, matches, nil
 				}
 			}
 		}
