@@ -75,16 +75,6 @@ func (b *RegexTableBuilder[T]) MustBuild(anchorStart, anchorEnd bool) *RegexTabl
 	return table
 }
 
-// HasPatterns returns true if any patterns have been added to the builder.
-func (b *RegexTableBuilder[T]) HasPatterns() bool {
-	return len(b.patterns) > 0
-}
-
-// PatternCount returns the number of patterns that have been added.
-func (b *RegexTableBuilder[T]) PatternCount() int {
-	return len(b.patterns)
-}
-
 // Clear removes all patterns from the builder, allowing it to be reused.
 func (b *RegexTableBuilder[T]) Clear() *RegexTableBuilder[T] {
 	b.patterns = b.patterns[:0] // Reset slice but keep capacity

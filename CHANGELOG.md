@@ -19,7 +19,7 @@ Following the style in https://keepachangelog.com/en/1.0.0/
 - **Named Capture Groups**: Uses reserved `__REGEXTABLE_N__` namespace to avoid conflicts
 - **Type Safety**: Full generic support for any value type T
 - **Zero Dependencies**: Core package only depends on Go standard library
-- **Builder Utilities**: Clone, Clear, PatternCount, HasPatterns methods
+- **Builder Utilities**: Clone, Clear methods
 - **Immediate Compilation Options**: `AddPatternThenRecompile` and `RemovePatternThenRecompile`
 - **Comprehensive Documentation**: README, CONTRIBUTING.md, and integration examples
 - **regexp2 Integration Guide**: Complete example for using advanced regex features like lookbehind

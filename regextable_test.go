@@ -133,13 +133,13 @@ func TestRegexTable_LazyVsImmediateCompilation(t *testing.T) {
 	immediate := NewRegexTable[string](true, false) // Start anchoring, no end anchoring
 
 	// Valid pattern should succeed
-	err = immediate.AddPatternThenRecompile("valid", "value1")
+	err = immediate.AddAndCheckPattern("valid", "value1")
 	if err != nil {
 		t.Errorf("Immediate AddPattern should succeed: %v", err)
 	}
 
 	// Invalid pattern should fail immediately
-	err = immediate.AddPatternThenRecompile("[invalid", "value2") // Invalid regex
+	err = immediate.AddAndCheckPattern("[invalid", "value2") // Invalid regex
 	if err == nil {
 		t.Error("Expected immediate AddPattern to fail with invalid regex")
 	}

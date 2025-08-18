@@ -117,12 +117,8 @@ builder := regextable.NewRegexTableBuilder[string]()
 builder.AddPattern("test1", "value1")
 builder.AddPattern("test2", "value2")
 
-fmt.Printf("Patterns: %d\n", builder.PatternCount()) // 2
-fmt.Printf("Has patterns: %t\n", builder.HasPatterns()) // true
-
 // Clear and reuse
 builder.Clear()
-fmt.Printf("Patterns after clear: %d\n", builder.PatternCount()) // 0
 ```
 
 ## API Reference
@@ -150,12 +146,6 @@ Creates a copy of the builder with the same patterns and engine.
 #### `Clear() *RegexTableBuilder[T]`
 Removes all patterns from the builder.
 
-#### `HasPatterns() bool`
-Returns true if any patterns have been added.
-
-#### `PatternCount() int`
-Returns the number of patterns added.
-
 ### Direct RegexTable API
 
 #### `NewRegexTable[T any]() *RegexTable[T]`
@@ -174,7 +164,7 @@ of the pattern or when you're only adding one pattern.
 
 #### `Recompile() error`
 Manually rebuilds the union regex from all registered patterns. This is exposed to allow manual 
-control over when recompilation occurs.
+control over when recompilation, and hence error checking, occurs.
 
 #### `Lookup(input string) (T, []string, error)`
 Attempts to match the input against all registered patterns. Returns the associated value, 
@@ -183,8 +173,6 @@ submatch slice, and error. Automatically recompiles if patterns have been added/
 #### `TryLookup(input string) (T, []string, bool)`
 Like Lookup but returns a boolean success indicator instead of an error.
 
-#### `HasPatterns() bool`
-Returns true if the table has any patterns configured.
 
 ## Pattern Management
 

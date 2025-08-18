@@ -87,9 +87,9 @@ func (rt *RegexTable[T]) AddPattern(pattern string, value T) error {
 	return nil
 }
 
-// AddPatternThenRecompile is like AddPattern but immediately recompiles the regex.
+// AddAndCheckPattern is like AddPattern but immediately recompiles the regex.
 // Use this when you need immediate validation of the pattern or when you're only adding one pattern.
-func (rt *RegexTable[T]) AddPatternThenRecompile(pattern string, value T) error {
+func (rt *RegexTable[T]) AddAndCheckPattern(pattern string, value T) error {
 	err := rt.AddPattern(pattern, value)
 	if err != nil {
 		return err
@@ -101,11 +101,6 @@ func (rt *RegexTable[T]) AddPatternThenRecompile(pattern string, value T) error 
 	}
 
 	return nil
-}
-
-// HasPatterns returns true if the table has any patterns configured.
-func (rt *RegexTable[T]) HasPatterns() bool {
-	return len(rt.patternNames) > 0
 }
 
 // anchorPattern applies start/end anchoring to a pattern based on the table's settings.

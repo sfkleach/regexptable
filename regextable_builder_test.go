@@ -93,38 +93,6 @@ func TestRegexTableBuilder_MustBuild(t *testing.T) {
 	invalidBuilder.AddPattern("[invalid", 1).MustBuild(true, false) // Should panic
 }
 
-func TestRegexTableBuilder_Utilities(t *testing.T) {
-	builder := NewRegexTableBuilder[string]()
-
-	// Test empty builder
-	if builder.HasPatterns() {
-		t.Error("New builder should have no patterns")
-	}
-	if builder.PatternCount() != 0 {
-		t.Error("New builder should have 0 pattern count")
-	}
-
-	// Add patterns
-	builder.AddPattern("test1", "value1")
-	builder.AddPattern("test2", "value2")
-
-	if !builder.HasPatterns() {
-		t.Error("Builder should have patterns after adding")
-	}
-	if builder.PatternCount() != 2 {
-		t.Errorf("Expected 2 patterns, got %d", builder.PatternCount())
-	}
-
-	// Test clear
-	builder.Clear()
-	if builder.HasPatterns() {
-		t.Error("Builder should have no patterns after clear")
-	}
-	if builder.PatternCount() != 0 {
-		t.Error("Builder should have 0 patterns after clear")
-	}
-}
-
 func TestRegexTableBuilder_Clone(t *testing.T) {
 	original := NewRegexTableBuilder[string]()
 	original.AddPattern("test1", "value1")
@@ -132,20 +100,8 @@ func TestRegexTableBuilder_Clone(t *testing.T) {
 
 	clone := original.Clone()
 
-	// Verify clone has same patterns
-	if clone.PatternCount() != original.PatternCount() {
-		t.Error("Clone should have same pattern count as original")
-	}
-
 	// Add to clone and verify original is unchanged
 	clone.AddPattern("test3", "value3")
-
-	if original.PatternCount() != 2 {
-		t.Error("Original should be unchanged after modifying clone")
-	}
-	if clone.PatternCount() != 3 {
-		t.Error("Clone should have additional pattern")
-	}
 
 	// Build both and verify they work correctly
 	originalTable, err := original.Build(true, false)
