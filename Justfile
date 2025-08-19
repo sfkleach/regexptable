@@ -25,10 +25,10 @@ test-coverage-html:
 # Clean generated files
 clean:
     rm -f coverage.out coverage.html
-
+    
 # Run the builder example
-run-builder-example:
-    cd builder_example && go run main.go
+run-example:
+    cd example && go run main.go
 
 # Format all Go code
 fmt:
