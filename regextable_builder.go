@@ -2,6 +2,7 @@ package regextable
 
 import (
 	"fmt"
+	"strings"
 )
 
 // RegexTableBuilder provides a convenient builder pattern for creating RegexTable instances.
@@ -15,6 +16,13 @@ type RegexTableBuilder[T any] struct {
 type patternEntry[T any] struct {
 	pattern string
 	value   T
+}
+
+// RegexTableSubBuilder provides a type-safe fluent interface for building alternation patterns.
+// It is returned by BeginAddSubPatterns() and ensures proper method sequencing.
+type RegexTableSubBuilder[T any] struct {
+	parent      *RegexTableBuilder[T]
+	subPatterns []string
 }
 
 // NewRegexTableBuilder creates a new RegexTableBuilder with the standard regex engine.
@@ -41,6 +49,33 @@ func (b *RegexTableBuilder[T]) AddPattern(pattern string, value T) *RegexTableBu
 		value:   value,
 	})
 	return b
+}
+
+// AddPatterns adds multiple patterns as a single alternation pattern with a shared value.
+// The patterns are combined using alternation syntax (?:pattern1|pattern2|...) and
+// treated as a single regex key that maps to the given value.
+func (b *RegexTableBuilder[T]) AddSubPatterns(patterns []string, value T) *RegexTableBuilder[T] {
+	if len(patterns) == 0 {
+		return b // No patterns to add, return unchanged
+	}
+
+	if len(patterns) == 1 {
+		// Single pattern, no need for alternation syntax
+		return b.AddPattern(patterns[0], value)
+	}
+
+	// Create alternation pattern with proper grouping
+	var alternation strings.Builder
+	alternation.WriteString("(?:")
+	for i, pattern := range patterns {
+		if i > 0 {
+			alternation.WriteString("|")
+		}
+		alternation.WriteString(pattern)
+	}
+	alternation.WriteString(")")
+
+	return b.AddPattern(alternation.String(), value)
 }
 
 // Build creates the final RegexTable with all accumulated patterns.
@@ -87,4 +122,35 @@ func (b *RegexTableBuilder[T]) Clone() *RegexTableBuilder[T] {
 	clone.patterns = make([]patternEntry[T], len(b.patterns))
 	copy(clone.patterns, b.patterns)
 	return clone
+}
+
+// BeginAddSubPatterns starts building an alternation pattern with a type-safe fluent interface.
+// Returns a RegexTableSubBuilder that only allows AddSubPattern() and EndAddSubPatterns() calls.
+// This prevents calling methods out of order and ensures proper alternation construction.
+// Usage: BeginAddSubPatterns() -> AddSubPattern(...) -> EndAddSubPatterns(value).
+func (b *RegexTableBuilder[T]) BeginAddSubPatterns() *RegexTableSubBuilder[T] {
+	return &RegexTableSubBuilder[T]{
+		parent:      b,
+		subPatterns: make([]string, 0),
+	}
+}
+
+// AddSubPattern adds a pattern to the current alternation being built.
+// Must be called between BeginAddSubPatterns() and EndAddSubPatterns().
+// Returns RegexTableSubBuilder to maintain type-safe method chaining.
+func (sb *RegexTableSubBuilder[T]) AddSubPattern(pattern string) *RegexTableSubBuilder[T] {
+	sb.subPatterns = append(sb.subPatterns, pattern)
+	return sb
+}
+
+// EndAddSubPatterns completes the alternation pattern and adds it to the builder with the given value.
+// The accumulated sub-patterns are combined using alternation syntax (?:pattern1|pattern2|...).
+// Returns the parent RegexTableBuilder to continue the fluent interface.
+func (sb *RegexTableSubBuilder[T]) EndAddSubPatterns(value T) *RegexTableBuilder[T] {
+	// Use AddSubPatterns to handle the alternation logic
+	sb.parent.AddSubPatterns(sb.subPatterns, value)
+
+	// Clear the sub-patterns after use
+	sb.subPatterns = sb.subPatterns[:0]
+	return sb.parent
 }

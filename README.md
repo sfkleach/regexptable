@@ -12,14 +12,23 @@ go get github.com/sfkleach/regextable
 
 ## Features
 
-- **High Performance**: Uses a single compiled regex with named capture groups for O(n) matching regardless of pattern count (with Go's default regexp implementation)
-- **Builder Pattern**: `RegexTableBuilder` provides a convenient API that hides compilation complexity
-- **Lazy Compilation**: Defers regex build until lookup for better performance when adding multiple patterns
+- **High Performance**: Uses a single compiled regex with named capture groups
+  for O(n) matching regardless of pattern count (with Go's default regexp
+  implementation)
+- **Builder Pattern**: `RegexTableBuilder` provides a convenient API that hides
+  compilation complexity
+- **Lazy Compilation**: Defers regex build until lookup for better performance
+  when adding multiple patterns
 - **Type Safe**: Generic implementation supports any value type `T`
-- **Reserved Namespace**: Uses `__REGEXTABLE_` prefix to avoid conflicts with user-defined capture groups
-- **Built-in Regexp**: Uses Go's standard `regexp` package by default - no external dependencies
-- **Full Match Access**: Returns both the classified value and complete submatch details
-- **Pluggable Regex Engines**: Supports different regex engines (see [integrating with regexp2](docs/integrating_with_regexp2.md) for advanced features like lookbehind)
+- **Reserved Namespace**: Uses `__REGEXTABLE_` prefix to avoid conflicts with
+  user-defined capture groups
+- **Built-in Regexp**: Uses Go's standard `regexp` package by default - no
+  external dependencies
+- **Full Match Access**: Returns both the classified value and complete submatch
+  details
+- **Pluggable Regex Engines**: Supports different regex engines (see
+  [integrating with regexp2](docs/integrating_with_regexp2.md) for advanced
+  features like lookbehind)
 
 ## Quick Start (Recommended)
 
@@ -108,6 +117,39 @@ func lookupToken(input string) TokenType {
 }
 ```
 
+### Alternation Patterns
+
+You can create alternation patterns (multiple patterns that map to the same
+value) in two ways:
+
+#### Using AddSubPatterns
+
+```go
+// All these number formats map to "number"
+table, err := regextable.NewRegexTableBuilder[string]().
+    AddSubPatterns([]string{`\d+`, `0x[0-9a-fA-F]+`, `0b[01]+`}, "number").
+    AddPattern(`[a-zA-Z]+`, "word").
+    Build(true, false)
+```
+
+#### Using Type-Safe Fluent Interface
+
+```go
+// Same result with type-safe method chaining
+table, err := regextable.NewRegexTableBuilder[string]().
+    BeginAddSubPatterns().
+        AddSubPattern(`\d+`).
+        AddSubPattern(`0x[0-9a-fA-F]+`).
+        AddSubPattern(`0b[01]+`).
+        EndAddSubPatterns("number").
+    AddPattern(`[a-zA-Z]+`, "word").
+    Build(true, false)
+```
+
+The type-safe interface prevents calling methods out of order and ensures proper
+alternation construction. Both approaches create the same regex pattern:
+`(?:\d+|0x[0-9a-fA-F]+|0b[01]+)`.
+
 ### Builder State Management
 
 ```go
@@ -155,20 +197,23 @@ Creates a new empty RegexTable for values of type T using the standard Go regex 
 Creates a new empty RegexTable using a custom regex engine.
 
 #### `AddPattern(pattern string, value T) error`
-Adds a regex pattern with its associated value to the table.
-**Note**: This method uses lazy compilation - the regex is not compiled until lookup is performed.
+Adds a regex pattern with its associated value to the table. **Note**: This
+method uses lazy compilation - the regex is not compiled until lookup is
+performed.
 
 #### `AddPatternThenRecompile(pattern string, value T) error`
-Like AddPattern but immediately recompiles the regex. Use this when you need immediate validation 
-of the pattern or when you're only adding one pattern.
+Like AddPattern but immediately recompiles the regex. Use this when you need
+immediate validation of the pattern or when you're only adding one pattern.
 
 #### `Recompile() error`
-Manually rebuilds the union regex from all registered patterns. This is exposed to allow manual 
-control over when recompilation, and hence error checking, occurs.
+Manually rebuilds the union regex from all registered patterns. This is exposed
+to allow manual control over when recompilation, and hence error checking,
+occurs.
 
 #### `Lookup(input string) (T, []string, error)`
-Attempts to match the input against all registered patterns. Returns the associated value, 
-submatch slice, and error. Automatically recompiles if patterns have been added/removed.
+Attempts to match the input against all registered patterns. Returns the
+associated value, submatch slice, and error. Automatically recompiles if
+patterns have been added/removed.
 
 #### `TryLookup(input string) (T, []string, bool)`
 Like Lookup but returns a boolean success indicator instead of an error.
@@ -243,15 +288,15 @@ import (
 
 func main() {
     // Standard Go engine: (?P<name>pattern)
-    goTable := regextable.NewRegexTableBuilder[string]().
-        AddPattern("test.*", "match").
+    goTa.ble := regextable.NewRegexTableBuilder[string]()
+        .AddPattern("test.*", "match")
         MustBuild()
 
     // .NET-style engine: (?<name>pattern)  
     dotNetEngine := regextable.NewDotNetRegexEngine()
-    dotNetTable := regextable.NewRegexTableBuilderWithEngine[string](dotNetEngine).
-        AddPattern("test.*", "match").
-        MustBuild()
+    dotNetTable := regextable.NewRegexTableBuilderWithEngine[string](dotNetEngine)
+        .AddPattern("test.*", "match")
+        .MustBuild()
 
     // Both tables work identically from the user's perspective
     value, _, found := goTable.TryLookup("testing")    // Returns "match", true

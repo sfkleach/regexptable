@@ -16,11 +16,16 @@ regex and extract the corresponding value for the matched key.
 This package abstracts over different regex engines. We can use a 
 RegexTableBuilder to construct regex tables efficiently.
 
-## Ad hoc tests
+## Temporary Files
 
-- When trying to verify new functionality, avoid creating new files that need
-  subsequent deletion. Instead, prefer use existing test files and add new test cases
-  as needed. (VSCode gets confused by them too easily.)
+- VSCode gets confused by temporary files too easily. And when you try 
+  deleted them it often instantly recreates them. So you must always check
+  that they are gone after a few seconds have elapsed (i.e. add sleep to
+  the command).
+
+- When you need to create temporary files, avoid creating them in the repo 
+  folder - unless it is in the `tmp` folder, which is excluded by .gitignore.
+  It is fine to create them in `/tmp` too.
 
 ## Programming Guidelines
 
