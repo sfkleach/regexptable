@@ -53,7 +53,9 @@ func (b *RegexTableBuilder[T]) AddPattern(pattern string, value T) *RegexTableBu
 
 // AddPatterns adds multiple patterns as a single alternation pattern with a shared value.
 // The patterns are combined using alternation syntax (?:pattern1|pattern2|...) and
-// treated as a single regex key that maps to the given value.
+// treated as a single regex key that maps to the given value. Note that anchoring
+// does not apply to this construction, as it is simply a longhand way to add
+// a single pattern entry.
 func (b *RegexTableBuilder[T]) AddSubPatterns(patterns []string, value T) *RegexTableBuilder[T] {
 	if len(patterns) == 0 {
 		return b // No patterns to add, return unchanged
@@ -147,7 +149,8 @@ func (sb *RegexTableSubBuilder[T]) AddSubPattern(pattern string) *RegexTableSubB
 // The accumulated sub-patterns are combined using alternation syntax (?:pattern1|pattern2|...).
 // Returns the parent RegexTableBuilder to continue the fluent interface.
 func (sb *RegexTableSubBuilder[T]) EndAddSubPatterns(value T) *RegexTableBuilder[T] {
-	// Use AddSubPatterns to handle the alternation logic
+	// Use AddSubPatterns to handle the alternation logic. Note that anchoring
+	// is not applied at this level (it would make no sense).
 	sb.parent.AddSubPatterns(sb.subPatterns, value)
 
 	// Clear the sub-patterns after use
