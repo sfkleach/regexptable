@@ -1,8 +1,12 @@
+# How-to Add Alternative Regex Engine
+
+
+```go
 package regextable
 
 import (
 	"fmt"
-	"regexp"
+	"regexp2"
 )
 
 // DotNetRegexEngine simulates how .NET regex engines work with different named group syntax.
@@ -15,7 +19,7 @@ func NewDotNetRegexEngine() *DotNetRegexEngine {
 
 // Compile wraps Go's regex with .NET-compatible interface.
 func (e *DotNetRegexEngine) Compile(pattern string) (CompiledRegex, error) {
-	compiled, err := regexp.Compile(pattern)
+	compiled, err := regexp2.Compile(pattern)
 	if err != nil {
 		return nil, err
 	}
@@ -24,28 +28,6 @@ func (e *DotNetRegexEngine) Compile(pattern string) (CompiledRegex, error) {
 
 // FormatNamedGroup uses .NET-style named capture group syntax.
 func (e *DotNetRegexEngine) FormatNamedGroup(groupName, pattern string) string {
-	return fmt.Sprintf("(?<%s>%s)", groupName, pattern)
-}
-
-// JavaRegexEngine simulates how Java regex engines work.
-type JavaRegexEngine struct{}
-
-// NewJavaRegexEngine creates a new Java-style regex engine.
-func NewJavaRegexEngine() *JavaRegexEngine {
-	return &JavaRegexEngine{}
-}
-
-// Compile wraps Go's regex with Java-compatible interface.
-func (e *JavaRegexEngine) Compile(pattern string) (CompiledRegex, error) {
-	compiled, err := regexp.Compile(pattern)
-	if err != nil {
-		return nil, err
-	}
-	return &StandardCompiledRegex{compiled}, nil
-}
-
-// FormatNamedGroup uses Java-style named capture group syntax.
-func (e *JavaRegexEngine) FormatNamedGroup(groupName, pattern string) string {
 	return fmt.Sprintf("(?<%s>%s)", groupName, pattern)
 }
 
@@ -64,26 +46,18 @@ func ExampleDifferentEngines() {
 		AddPattern("else", "simple_label").
 		MustBuild(true, false) // Start anchoring, no end anchoring
 
-	javaTable := NewRegexTableBuilderWithEngine[string](NewJavaRegexEngine()).
-		AddPattern("if.*", "form_start").
-		AddPattern("end.*", "form_end").
-		AddPattern("else", "simple_label").
-		MustBuild(true, false) // Start anchoring, no end anchoring
-
 	testInput := "else"
 
 	// All should produce the same result despite different internal regex syntax
 	goResult, _, goOk := goTable.Lookup(testInput)
 	dotNetResult, _, dotNetOk := dotNetTable.Lookup(testInput)
-	javaResult, _, javaOk := javaTable.Lookup(testInput)
 
 	fmt.Printf("Go engine:     %s (found: %t)\n", goResult, goOk)
 	fmt.Printf(".NET engine:   %s (found: %t)\n", dotNetResult, dotNetOk)
-	fmt.Printf("Java engine:   %s (found: %t)\n", javaResult, javaOk)
 
 	// Show the internal regex patterns to demonstrate differences
 	fmt.Printf("\nInternal patterns:\n")
 	fmt.Printf("Go style:      %s\n", goTable.engine.FormatNamedGroup("test", "pattern"))
 	fmt.Printf(".NET style:    %s\n", dotNetTable.engine.FormatNamedGroup("test", "pattern"))
-	fmt.Printf("Java style:    %s\n", javaTable.engine.FormatNamedGroup("test", "pattern"))
 }
+```

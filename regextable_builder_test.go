@@ -719,3 +719,60 @@ func TestRegexTableBuilder_FluentSubPatterns(t *testing.T) {
 		}
 	})
 }
+
+func TestRegexTableBuilder_Clear(t *testing.T) {
+	// Build a table with some patterns
+	builder := NewRegexTableBuilder[string]().
+		AddPattern("hello", "greeting").
+		AddPattern("world", "place").
+		AddPattern(`\d+`, "number")
+
+	// Verify patterns were added
+	table, err := builder.Build(true, false)
+	if err != nil {
+		t.Fatalf("Failed to build initial table: %v", err)
+	}
+
+	// Verify the table works
+	if value, _, ok := table.TryLookup("hello"); !ok || value != "greeting" {
+		t.Errorf("Initial table should match 'hello'")
+	}
+
+	// Clear the builder
+	builder.Clear()
+
+	// Build new table after clear - should be empty
+	emptyTable, err := builder.Build(true, false)
+	if err != nil {
+		t.Fatalf("Failed to build table after clear: %v", err)
+	}
+
+	// Verify the cleared table doesn't match anything
+	if _, _, ok := emptyTable.TryLookup("hello"); ok {
+		t.Errorf("Cleared table should not match 'hello'")
+	}
+	if _, _, ok := emptyTable.TryLookup("world"); ok {
+		t.Errorf("Cleared table should not match 'world'")
+	}
+	if _, _, ok := emptyTable.TryLookup("123"); ok {
+		t.Errorf("Cleared table should not match '123'")
+	}
+
+	// Verify we can add new patterns after clear
+	newTable, err := builder.
+		AddPattern("foo", "bar").
+		Build(true, false)
+	if err != nil {
+		t.Fatalf("Failed to build new table after clear: %v", err)
+	}
+
+	// Verify the new table works
+	if value, _, ok := newTable.TryLookup("foo"); !ok || value != "bar" {
+		t.Errorf("New table should match 'foo' -> 'bar'")
+	}
+
+	// Verify old patterns are still gone
+	if _, _, ok := newTable.TryLookup("hello"); ok {
+		t.Errorf("New table should not match old pattern 'hello'")
+	}
+}

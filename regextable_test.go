@@ -288,3 +288,92 @@ func TestRegexTable_AnchoringOptions(t *testing.T) {
 		}
 	})
 }
+
+func TestRegexTable_LookupOrElse(t *testing.T) {
+	table := NewRegexTable[string](true, false) // Start anchoring, no end anchoring
+
+	// Add test patterns
+	err := table.AddPattern("hello", "greeting")
+	if err != nil {
+		t.Fatalf("Failed to add pattern: %v", err)
+	}
+
+	err = table.AddPattern(`\d+`, "number")
+	if err != nil {
+		t.Fatalf("Failed to add pattern: %v", err)
+	}
+
+	// Test successful matches - should return matched value and matches
+	t.Run("successful match", func(t *testing.T) {
+		value, matches := table.LookupOrElse("hello", "default")
+		if value != "greeting" {
+			t.Errorf("Expected 'greeting', got '%s'", value)
+		}
+		if len(matches) < 1 || matches[0] != "hello" {
+			t.Errorf("Expected matches to start with 'hello', got %v", matches)
+		}
+	})
+
+	t.Run("successful match with number", func(t *testing.T) {
+		value, matches := table.LookupOrElse("123", "default")
+		if value != "number" {
+			t.Errorf("Expected 'number', got '%s'", value)
+		}
+		if len(matches) < 1 || matches[0] != "123" {
+			t.Errorf("Expected matches to start with '123', got %v", matches)
+		}
+	})
+
+	// Test no match - should return default value and empty matches
+	t.Run("no match returns default", func(t *testing.T) {
+		value, matches := table.LookupOrElse("nomatch", "default_value")
+		if value != "default_value" {
+			t.Errorf("Expected 'default_value', got '%s'", value)
+		}
+		if len(matches) != 0 {
+			t.Errorf("Expected empty matches, got %v", matches)
+		}
+	})
+
+	// Test with different default value types
+	t.Run("different default values", func(t *testing.T) {
+		// String default
+		value, _ := table.LookupOrElse("nomatch", "fallback")
+		if value != "fallback" {
+			t.Errorf("Expected 'fallback', got '%s'", value)
+		}
+
+		// Empty string default
+		value, _ = table.LookupOrElse("nomatch", "")
+		if value != "" {
+			t.Errorf("Expected empty string, got '%s'", value)
+		}
+	})
+
+	// Test with typed table using different types
+	t.Run("typed table with int values", func(t *testing.T) {
+		intTable := NewRegexTable[int](true, false)
+		err := intTable.AddPattern("one", 1)
+		if err != nil {
+			t.Fatalf("Failed to add pattern: %v", err)
+		}
+
+		// Successful match
+		value, matches := intTable.LookupOrElse("one", 999)
+		if value != 1 {
+			t.Errorf("Expected 1, got %d", value)
+		}
+		if len(matches) < 1 || matches[0] != "one" {
+			t.Errorf("Expected matches to start with 'one', got %v", matches)
+		}
+
+		// No match with default
+		value, matches = intTable.LookupOrElse("nomatch", 999)
+		if value != 999 {
+			t.Errorf("Expected 999, got %d", value)
+		}
+		if len(matches) != 0 {
+			t.Errorf("Expected empty matches, got %v", matches)
+		}
+	})
+}
