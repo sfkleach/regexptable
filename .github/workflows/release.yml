@@ -29,7 +29,7 @@ jobs:
 
     - name: Build examples
       run: |
-        cd builder_example
+        cd example
         go build -o regexptable-example .
 
     - name: Create Release
