@@ -1,4 +1,4 @@
-# Justfile for RegexTable helpers
+# Justfile for RegexpTable helpers
 
 # Default recipe lists available commands
 default:

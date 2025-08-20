@@ -1,17 +1,17 @@
-// Package regextable provides efficient multi-pattern regex classification.
+// Package regexptable provides efficient multi-pattern regexp classification.
 //
-// A regex table is an associative array whose keys are regular expressions
+// A regexp table is an associative array whose keys are regular expressions
 // that map to arbitrary values. Lookup operations match strings against
-// the regex-keys to find a match and return the corresponding value and
+// the regexp-keys to find a match and return the corresponding value and
 // match groups.
 //
-// Core to the implementation is the compilation of regex-keys into a single
+// Core to the implementation is the compilation of regexp-keys into a single
 // regular expression with named capture groups for each key. This allows
-// efficient matching against the combined regex.
+// efficient matching against the combined regexp.
 //
 // Example usage:
 //
-//	table, err := regextable.NewRegexTableBuilder[string]().
+//	table, err := regexptable.NewRegexpTableBuilder[string]().
 //		AddPattern(`\d+`, "number").
 //		AddPattern(`[a-zA-Z]+`, "word").
 //		Build()
@@ -22,25 +22,25 @@
 //
 //	value, matches, ok := table.TryLookup("123")
 //	// value: "number", matches: ["123"], ok: true
-package regextable
+package regexptable
 
 import (
 	"fmt"
 	"strings"
 )
 
-// ValueAndPattern holds both the value and original pattern for a regex group.
+// ValueAndPattern holds both the value and original pattern for a regexp group.
 type ValueAndPattern[T any] struct {
 	Value           T
 	Pattern         string
-	compiledPattern CompiledRegex // Cached compiled pattern for disambiguation
+	compiledPattern CompiledRegexp // Cached compiled pattern for disambiguation
 }
 
-// RegexTable provides efficient multi-pattern regex classification using a pluggable regex engine.
-// It compiles multiple regex patterns into a single automaton for optimal performance.
-type RegexTable[T any] struct {
-	engine         RegexEngine
-	compiled       CompiledRegex
+// RegexpTable provides efficient multi-pattern regexp classification using a pluggable regexp engine.
+// It compiles multiple regexp patterns into a single automaton for optimal performance.
+type RegexpTable[T any] struct {
+	engine         RegexpEngine
+	compiled       CompiledRegexp
 	lookup         map[string]ValueAndPattern[T] // Maps group names to values and original patterns
 	patternNames   []string
 	nextGroupID    int
@@ -49,14 +49,14 @@ type RegexTable[T any] struct {
 	anchorEnd      bool // Whether to anchor patterns to end of string with $
 }
 
-// NewRegexTable creates a new empty RegexTable using the standard regex engine.
-func NewRegexTable[T any](anchorStart, anchorEnd bool) *RegexTable[T] {
-	return NewRegexTableWithEngine[T](NewStandardRegexEngine(), anchorStart, anchorEnd)
+// NewRegexpTable creates a new empty RegexpTable using the standard regexp engine.
+func NewRegexpTable[T any](anchorStart, anchorEnd bool) *RegexpTable[T] {
+	return NewRegexpTableWithEngine[T](NewStandardRegexpEngine(), anchorStart, anchorEnd)
 }
 
-// NewRegexTableWithEngine creates a new empty RegexTable with a custom regex engine.
-func NewRegexTableWithEngine[T any](engine RegexEngine, anchorStart, anchorEnd bool) *RegexTable[T] {
-	return &RegexTable[T]{
+// NewRegexpTableWithEngine creates a new empty RegexpTable with a custom regexp engine.
+func NewRegexpTableWithEngine[T any](engine RegexpEngine, anchorStart, anchorEnd bool) *RegexpTable[T] {
+	return &RegexpTable[T]{
 		engine:         engine,
 		lookup:         make(map[string]ValueAndPattern[T]),
 		patternNames:   make([]string, 0),
@@ -67,11 +67,11 @@ func NewRegexTableWithEngine[T any](engine RegexEngine, anchorStart, anchorEnd b
 	}
 }
 
-// AddPattern adds a new regex pattern with its associated value to the table.
+// AddPattern adds a new regexp pattern with its associated value to the table.
 // This method defers recompilation until Lookup is called for better performance.
-func (rt *RegexTable[T]) AddPattern(pattern string, value T) error {
+func (rt *RegexpTable[T]) AddPattern(pattern string, value T) error {
 	// Auto-generate a unique internal name
-	groupName := fmt.Sprintf("__REGEXTABLE_%d__", rt.nextGroupID)
+	groupName := fmt.Sprintf("__REGEXPTABLE_%d__", rt.nextGroupID)
 	rt.nextGroupID++
 
 	// Create a unique capture group name using the engine's syntax
@@ -87,9 +87,9 @@ func (rt *RegexTable[T]) AddPattern(pattern string, value T) error {
 	return nil
 }
 
-// AddAndCheckPattern is like AddPattern but immediately recompiles the regex.
+// AddAndCheckPattern is like AddPattern but immediately recompiles the regexp.
 // Use this when you need immediate validation of the pattern or when you're only adding one pattern.
-func (rt *RegexTable[T]) AddAndCheckPattern(pattern string, value T) error {
+func (rt *RegexpTable[T]) AddAndCheckPattern(pattern string, value T) error {
 	err := rt.AddPattern(pattern, value)
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func (rt *RegexTable[T]) AddAndCheckPattern(pattern string, value T) error {
 }
 
 // anchorPattern applies start/end anchoring to a pattern based on the table's settings.
-func (rt *RegexTable[T]) anchorPattern(pattern string) string {
+func (rt *RegexpTable[T]) anchorPattern(pattern string) string {
 	result := pattern
 	if rt.anchorStart {
 		result = "^(?:" + result + ")"
@@ -118,7 +118,7 @@ func (rt *RegexTable[T]) anchorPattern(pattern string) string {
 }
 
 // validatePatterns checks each pattern individually and returns details about any invalid patterns.
-func (rt *RegexTable[T]) validatePatterns() []string {
+func (rt *RegexpTable[T]) validatePatterns() []string {
 	var invalidPatterns []string
 
 	for groupName, valueAndPattern := range rt.lookup {
@@ -133,9 +133,9 @@ func (rt *RegexTable[T]) validatePatterns() []string {
 	return invalidPatterns
 }
 
-// Recompile rebuilds the union regex from all registered patterns.
+// Recompile rebuilds the union regexp from all registered patterns.
 // This is exposed to allow manual control over when recompilation occurs.
-func (rt *RegexTable[T]) Recompile() error {
+func (rt *RegexpTable[T]) Recompile() error {
 	if len(rt.patternNames) == 0 {
 		rt.compiled = nil
 		rt.needsRecompile = false
@@ -152,18 +152,18 @@ func (rt *RegexTable[T]) Recompile() error {
 		// Try to identify which specific patterns are invalid
 		invalidPatterns := rt.validatePatterns()
 		if len(invalidPatterns) > 0 {
-			return fmt.Errorf("failed to compile union regex due to invalid patterns:\n%s", strings.Join(invalidPatterns, "\n"))
+			return fmt.Errorf("failed to compile union regexp due to invalid patterns:\n%s", strings.Join(invalidPatterns, "\n"))
 		}
 		// Fallback to original error if we can't identify specific patterns
-		return fmt.Errorf("failed to compile union regex: %w", err)
+		return fmt.Errorf("failed to compile union regexp: %w", err)
 	}
 
 	rt.needsRecompile = false
 	return nil
 }
 
-// ensureCompiled ensures the regex is compiled before use, recompiling if necessary.
-func (rt *RegexTable[T]) ensureCompiled() error {
+// ensureCompiled ensures the regexp is compiled before use, recompiling if necessary.
+func (rt *RegexpTable[T]) ensureCompiled() error {
 	if rt.needsRecompile || rt.compiled == nil {
 		return rt.Recompile()
 	}
@@ -172,8 +172,8 @@ func (rt *RegexTable[T]) ensureCompiled() error {
 
 // Lookup attempts to match the input string against all registered patterns.
 // Returns the value, submatch slice, and error. If no patterns match, returns zero value, nil, error.
-// This method automatically recompiles the regex if patterns have been added/removed since last compilation.
-func (rt *RegexTable[T]) Lookup(input string) (T, []string, error) {
+// This method automatically recompiles the regexp if patterns have been added/removed since last compilation.
+func (rt *RegexpTable[T]) Lookup(input string) (T, []string, error) {
 	var zero T
 
 	err := rt.ensureCompiled()
@@ -209,24 +209,24 @@ func (rt *RegexTable[T]) Lookup(input string) (T, []string, error) {
 		if name != "" && i < len(matches) {
 			if valueAndPattern, exists := rt.lookup[name]; exists {
 				// Use cached compiled pattern or compile on-demand
-				var individualRegex CompiledRegex
+				var individualRegexp CompiledRegexp
 				if valueAndPattern.compiledPattern != nil {
-					individualRegex = valueAndPattern.compiledPattern
+					individualRegexp = valueAndPattern.compiledPattern
 				} else {
 					// Compile and cache the pattern
 					individualPattern := rt.anchorPattern(valueAndPattern.Pattern)
-					compiledRegex, err := rt.engine.Compile(individualPattern)
+					compiledRegexp, err := rt.engine.Compile(individualPattern)
 					if err != nil {
 						continue // Skip invalid patterns
 					}
 					// Cache the compiled pattern (note: this modifies the map entry)
-					valueAndPattern.compiledPattern = compiledRegex
+					valueAndPattern.compiledPattern = compiledRegexp
 					rt.lookup[name] = valueAndPattern
-					individualRegex = compiledRegex
+					individualRegexp = compiledRegexp
 				}
 
 				// Test if this individual pattern matches
-				if individualMatches := individualRegex.FindStringSubmatch(input); individualMatches != nil {
+				if individualMatches := individualRegexp.FindStringSubmatch(input); individualMatches != nil {
 					return valueAndPattern.Value, matches, nil
 				}
 			}
@@ -236,12 +236,12 @@ func (rt *RegexTable[T]) Lookup(input string) (T, []string, error) {
 	return zero, nil, fmt.Errorf("internal error: match found but no capture group matched")
 }
 
-func (rt *RegexTable[T]) TryLookup(input string) (T, []string, bool) {
+func (rt *RegexpTable[T]) TryLookup(input string) (T, []string, bool) {
 	value, matches, err := rt.Lookup(input)
 	return value, matches, err == nil
 }
 
-func (rt *RegexTable[T]) LookupOrElse(input string, defaultValue T) (T, []string) {
+func (rt *RegexpTable[T]) LookupOrElse(input string, defaultValue T) (T, []string) {
 	value, matches, err := rt.Lookup(input)
 	if err != nil {
 		return defaultValue, []string{}

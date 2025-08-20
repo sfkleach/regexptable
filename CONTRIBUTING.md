@@ -1,6 +1,6 @@
-# Contributing to RegexTable
+# Contributing to RegexpTable
 
-Thank you for your interest in contributing to RegexTable! This document provides guidelines for contributing to this Go library for efficient multi-pattern regex classification.
+Thank you for your interest in contributing to RegexpTable! This document provides guidelines for contributing to this Go library for efficient multi-pattern regexp classification.
 
 ## Getting Started
 
@@ -13,8 +13,8 @@ Thank you for your interest in contributing to RegexTable! This document provide
 
 1. Fork and clone the repository:
    ```bash
-   git clone https://github.com/sfkleach/regextable.git
-   cd regextable
+   git clone https://github.com/sfkleach/regexptable.git
+   cd regexptable
    ```
 
 2. Verify your setup:
@@ -45,22 +45,22 @@ Thank you for your interest in contributing to RegexTable! This document provide
 - **Easy adoption**: Simple `go get` without dependency management concerns
 - **Lightweight footprint**: Core functionality remains minimal and focused
 
-### Regex Engine Implementations
+### Regexp Engine Implementations
 
-Different regex engines (like `regexp2`, `re2`, etc.) should be implemented in **separate repositories** to maintain the zero-dependency principle:
+Different regexp engines (like `regexp2`, `re2`, etc.) should be implemented in **separate repositories** to maintain the zero-dependency principle:
 
 ```
-github.com/sfkleach/regextable           # Core package (stdlib only)
-github.com/your-org/regextable-regexp2   # regexp2 integration (separate repo)
-github.com/your-org/regextable-re2       # re2 integration (separate repo)
+github.com/sfkleach/regexptable           # Core package (stdlib only)
+github.com/your-org/regexptable-regexp2   # regexp2 integration (separate repo)
+github.com/your-org/regexptable-re2       # re2 integration (separate repo)
 ```
 
 This allows users to:
 - Use the core library without any external dependencies
-- Selectively add only the regex engines they need
+- Selectively add only the regexp engines they need
 - Avoid pulling in heavy dependencies for features they don't use
 
-When contributing regex engine support, please create companion packages rather than adding dependencies to this core repository.
+When contributing regexp engine support, please create companion packages rather than adding dependencies to this core repository.
 
 ### Code Style
 
@@ -83,12 +83,12 @@ if name != "" && i < len(matches) {
 
 This is particularly important for:
 - Interface implementations where behavior can't be guaranteed
-- Pluggable components (like `RegexEngine` implementations)
+- Pluggable components (like `RegexpEngine` implementations)
 - Boundary conditions and edge cases
 
 ### API Design Principles
 
-- **Type Safety**: Use generics (`RegexTable[T]`) for compile-time safety
+- **Type Safety**: Use generics (`RegexpTable[T]`) for compile-time safety
 - **Builder Pattern**: Provide fluent APIs that hide complexity
 - **Lazy Compilation**: Defer expensive operations until needed
 - **Multiple Access Patterns**: Support different error handling styles (`Lookup`, `TryLookup`, `LookupOrElse`)
@@ -111,12 +111,12 @@ just test
 - Write comprehensive tests for new functionality
 - Include edge cases and error conditions
 - Test both the core API and builder pattern
-- For regex engine implementations, test with various pattern types
+- For regexp engine implementations, test with various pattern types
 
 Example test structure:
 ```go
 func TestNewFeature(t *testing.T) {
-    table := regextable.NewRegexTableBuilder[string]().
+    table := regexptable.NewRegexpTableBuilder[string]().
         AddPattern(`test_pattern`, "expected_value").
         MustBuild()
     
@@ -128,24 +128,24 @@ func TestNewFeature(t *testing.T) {
 }
 ```
 
-## Adding New Regex Engines
+## Adding New Regexp Engines
 
-The library supports pluggable regex engines through the `RegexEngine` interface. However, **implementations for non-standard engines should be created in separate repositories** to maintain our zero-dependency policy (see Dependency Policy above).
+The library supports pluggable regexp engines through the `RegexpEngine` interface. However, **implementations for non-standard engines should be created in separate repositories** to maintain our zero-dependency policy (see Dependency Policy above).
 
 ### Implementation Steps
 
-1. **Create a separate repository** with clear naming (e.g., `regextable-enginename`)
+1. **Create a separate repository** with clear naming (e.g., `regexptable-enginename`)
 
 2. **Import this core package** as a dependency:
    ```go
-   import "github.com/sfkleach/regextable"
+   import "github.com/sfkleach/regexptable"
    ```
 
 3. **Implement the interfaces** in your package:
    ```go
    type MyEngine struct{}
    
-   func (e *MyEngine) Compile(pattern string) (regextable.CompiledRegex, error) {
+   func (e *MyEngine) Compile(pattern string) (regexptable.CompiledRegexp, error) {
        // Your implementation using external library
    }
    
@@ -154,14 +154,14 @@ The library supports pluggable regex engines through the `RegexEngine` interface
    }
    ```
 
-4. **Add comprehensive tests** that verify compatibility with the core regextable API
+4. **Add comprehensive tests** that verify compatibility with the core regexptable API
 
 5. **Provide documentation and examples** showing usage patterns
 
 ### Example Package Structure
 
 ```
-github.com/your-org/regextable-regexp2/
+github.com/your-org/regexptable-regexp2/
 ├── go.mod                    # Contains regexp2 dependency
 ├── regexp2_engine.go         # Engine implementation
 ├── regexp2_engine_test.go    # Comprehensive tests
@@ -208,9 +208,9 @@ When adding significant features:
 
 4. Commit with clear, descriptive messages:
    ```bash
-   git commit -m "Add support for custom regex engines
+   git commit -m "Add support for custom regexp engines
    
-   - Implement RegexEngine interface
+   - Implement RegexpEngine interface
    - Add comprehensive tests
    - Update documentation with examples"
    ```
@@ -226,7 +226,7 @@ When adding significant features:
 - **Backward Compatibility**: Avoid breaking existing APIs unless absolutely necessary
 - **Dependency Policy**: Ensure no external dependencies are added to the core package
 
-**Note**: Pull requests that add external dependencies to the core package will not be accepted. Please create separate companion packages for regex engines that require external dependencies.
+**Note**: Pull requests that add external dependencies to the core package will not be accepted. Please create separate companion packages for regexp engines that require external dependencies.
 
 ### Commit Message Format
 
@@ -249,16 +249,16 @@ This library is designed for performance. When contributing:
 
 ### Core Components
 
-- **`RegexTable[T]`**: Main data structure with pluggable engine support
-- **`RegexTableBuilder[T]`**: Fluent API for table construction
-- **`RegexEngine` interface**: Abstraction for different regex implementations
-- **`CompiledRegex` interface**: Abstraction for compiled regex objects
+- **`RegexpTable[T]`**: Main data structure with pluggable engine support
+- **`RegexpTableBuilder[T]`**: Fluent API for table construction
+- **`RegexpEngine` interface**: Abstraction for different regexp implementations
+- **`CompiledRegexp` interface**: Abstraction for compiled regexp objects
 
 ### Key Design Decisions
 
-- **Single compiled regex**: All patterns are combined into one regex for O(n) matching
-- **Named capture groups**: Use reserved namespace (`__REGEXTABLE_N__`) to avoid conflicts
-- **Pluggable engines**: Support different regex syntaxes and features
+- **Single compiled regexp**: All patterns are combined into one regexp for O(n) matching
+- **Named capture groups**: Use reserved namespace (`__REGEXPTABLE_N__`) to avoid conflicts
+- **Pluggable engines**: Support different regexp syntaxes and features
 - **Generic types**: Type-safe values without runtime casting
 
 ## Getting Help
@@ -278,4 +278,4 @@ Releases follow semantic versioning:
 - **Minor** (0.X.0): New features that maintain backward compatibility
 - **Major** (X.0.0): Breaking changes to the public API
 
-Thank you for contributing to RegexTable! 🚀
+Thank you for contributing to RegexpTable! 🚀

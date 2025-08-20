@@ -1,20 +1,20 @@
-# Regex Tables
+# Regexp Tables
 
 ## About the project
 
-This project is a library for creating and working with regex tables in Go.
-A regex table is a kind of associative array whose keys are regular
-expressions (regexs) that map to arbitrary values. A lookup operations matches
-a strings against the regex-keys to find a match and returns the corresponding
+This project is a library for creating and working with Regexp tables in Go.
+A Regexp table is a kind of associative array whose keys are regular
+expressions (Regexps) that map to arbitrary values. A lookup operations matches
+a strings against the Regexp-keys to find a match and returns the corresponding
 value _and_ the match groups.
 
-Core to the implementation is the compilation of the regex-keys into a single
+Core to the implementation is the compilation of the Regexp-keys into a single
 regular expression with named capture groups for each key. This allows the
 lookup operation to efficiently match the input string against the combined 
-regex and extract the corresponding value for the matched key.
+Regexp and extract the corresponding value for the matched key.
 
-This package abstracts over different regex engines. We can use a 
-RegexTableBuilder to construct regex tables efficiently.
+This package abstracts over different Regexp engines. We can use a 
+RegexpTableBuilder to construct Regexp tables efficiently.
 
 ## Temporary Files
 

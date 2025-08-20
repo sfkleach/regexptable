@@ -1,32 +1,32 @@
-# RegexTable
+# RegexpTable
 
-A high-performance multi-pattern regex classifier for Go using pluggable regex
-engines. This library compiles multiple regex patterns into a single regex for
+A high-performance multi-pattern regexp classifier for Go using pluggable regex
+engines. This library compiles multiple regexp patterns into a single regexp for
 efficient lookup.
 
 ## Installation
 
 ```bash
-go get github.com/sfkleach/regextable
+go get github.com/sfkleach/regexptable
 ```
 
 ## Features
 
-- **High Performance**: Uses a single compiled regex with named capture groups
+- **High Performance**: Uses a single compiled regexp with named capture groups
   for O(n) matching regardless of pattern count (with Go's default regexp
   implementation)
-- **Builder Pattern**: `RegexTableBuilder` provides a convenient API that hides
+- **Builder Pattern**: `RegexpTableBuilder` provides a convenient API that hides
   compilation complexity
-- **Lazy Compilation**: Defers regex build until lookup for better performance
+- **Lazy Compilation**: Defers regexp build until lookup for better performance
   when adding multiple patterns
 - **Type Safe**: Generic implementation supports any value type `T`
-- **Reserved Namespace**: Uses `__REGEXTABLE_` prefix to avoid conflicts with
+- **Reserved Namespace**: Uses `__REGEXPTABLE_` prefix to avoid conflicts with
   user-defined capture groups
 - **Built-in Regexp**: Uses Go's standard `regexp` package by default - no
   external dependencies
 - **Full Match Access**: Returns both the classified value and complete submatch
   details
-- **Pluggable Regex Engines**: Supports different regex engines (see
+- **Pluggable Regexp Engines**: Supports different regexp engines (see
   [integrating with regexp2](docs/integrating_with_regexp2.md) for advanced
   features like lookbehind)
 
@@ -37,7 +37,7 @@ package main
 
 import (
     "fmt"
-    "github.com/sfkleach/regextable"
+    "github.com/sfkleach/regexptable"
 )
 
 type TokenType int
@@ -50,7 +50,7 @@ const (
 
 func main() {
     // Use the builder pattern - no need to think about compilation!
-    table, err := regextable.NewRegexTableBuilder[TokenType]().
+    table, err := regexptable.NewRegexpTableBuilder[TokenType]().
         AddPattern(`\b(if|else|while|for)\b`, TokenKeyword).
         AddPattern(`\b[a-zA-Z_][a-zA-Z0-9_]*\b`, TokenIdentifier).
         AddPattern(`\b\d+\b`, TokenNumber).
@@ -73,7 +73,7 @@ func main() {
 
 ```go
 // Simple fluent interface
-table, err := regextable.NewRegexTableBuilder[string]().
+table, err := regexptable.NewRegexpTableBuilder[string]().
     AddPattern("hello", "greeting").
     AddPattern("world", "place").
     Build()
@@ -83,7 +83,7 @@ table, err := regextable.NewRegexTableBuilder[string]().
 
 ```go
 // Create a base builder
-base := regextable.NewRegexTableBuilder[TokenType]().
+base := regexptable.NewRegexpTableBuilder[TokenType]().
     AddPattern(`form\w*`, FormStart).
     AddPattern(`end\w*`, FormEnd)
 
@@ -105,7 +105,7 @@ codeTable, _ := codeBuilder.Build()
 
 ```go
 // For static configs where patterns are known valid
-var GlobalTokenTable = regextable.NewRegexTableBuilder[TokenType]().
+var GlobalTokenTable = regexptable.NewRegexpTableBuilder[TokenType]().
     AddPattern(`\b(if|else|while|for)\b`, Keyword).
     AddPattern(`\b[a-zA-Z_]\w*\b`, Identifier).
     AddPattern(`\b\d+\b`, Number).
@@ -126,7 +126,7 @@ value) in two ways:
 
 ```go
 // All these number formats map to "number"
-table, err := regextable.NewRegexTableBuilder[string]().
+table, err := regexptable.NewRegexpTableBuilder[string]().
     AddSubPatterns([]string{`\d+`, `0x[0-9a-fA-F]+`, `0b[01]+`}, "number").
     AddPattern(`[a-zA-Z]+`, "word").
     Build(true, false)
@@ -136,7 +136,7 @@ table, err := regextable.NewRegexTableBuilder[string]().
 
 ```go
 // Same result with type-safe method chaining
-table, err := regextable.NewRegexTableBuilder[string]().
+table, err := regexptable.NewRegexpTableBuilder[string]().
     BeginAddSubPatterns().
         AddSubPattern(`\d+`).
         AddSubPattern(`0x[0-9a-fA-F]+`).
@@ -147,13 +147,13 @@ table, err := regextable.NewRegexTableBuilder[string]().
 ```
 
 The type-safe interface prevents calling methods out of order and ensures proper
-alternation construction. Both approaches create the same regex pattern:
+alternation construction. Both approaches create the same regexp pattern:
 `(?:\d+|0x[0-9a-fA-F]+|0b[01]+)`.
 
 ### Builder State Management
 
 ```go
-builder := regextable.NewRegexTableBuilder[string]()
+builder := regexptable.NewRegexpTableBuilder[string]()
 
 // Add patterns
 builder.AddPattern("test1", "value1")
@@ -167,46 +167,46 @@ builder.Clear()
 
 ### Builder Pattern (Recommended)
 
-#### `NewRegexTableBuilder[T any]() *RegexTableBuilder[T]`
-Creates a new builder for RegexTable[T] using the standard Go regex engine.
+#### `NewRegexpTableBuilder[T any]() *RegexpTableBuilder[T]`
+Creates a new builder for RegexpTable[T] using the standard Go regexp engine.
 
-#### `NewRegexTableBuilderWithEngine[T any](engine RegexEngine) *RegexTableBuilder[T]`
-Creates a new builder using a custom regex engine.
+#### `NewRegexpTableBuilderWithEngine[T any](engine RegexpEngine) *RegexpTableBuilder[T]`
+Creates a new builder using a custom regexp engine.
 
-#### `AddPattern(pattern string, value T) *RegexTableBuilder[T]`
+#### `AddPattern(pattern string, value T) *RegexpTableBuilder[T]`
 Adds a pattern to the builder. Returns the builder for method chaining.
 
-#### `Build() (*RegexTable[T], error)`
-Creates the final RegexTable with all accumulated patterns. Compilation happens here.
+#### `Build() (*RegexpTable[T], error)`
+Creates the final RegexpTable with all accumulated patterns. Compilation happens here.
 
-#### `MustBuild() *RegexTable[T]`
+#### `MustBuild() *RegexpTable[T]`
 Like Build but panics on error. Useful for static configurations.
 
-#### `Clone() *RegexTableBuilder[T]`
+#### `Clone() *RegexpTableBuilder[T]`
 Creates a copy of the builder with the same patterns and engine.
 
-#### `Clear() *RegexTableBuilder[T]`
+#### `Clear() *RegexpTableBuilder[T]`
 Removes all patterns from the builder.
 
-### Direct RegexTable API
+### Direct RegexpTable API
 
-#### `NewRegexTable[T any]() *RegexTable[T]`
-Creates a new empty RegexTable for values of type T using the standard Go regex engine.
+#### `NewRegexpTable[T any]() *RegexpTable[T]`
+Creates a new empty RegexpTable for values of type T using the standard Go regexp engine.
 
-#### `NewRegexTableWithEngine[T any](engine RegexEngine) *RegexTable[T]`
-Creates a new empty RegexTable using a custom regex engine.
+#### `NewRegexpTableWithEngine[T any](engine RegexpEngine) *RegexpTable[T]`
+Creates a new empty RegexpTable using a custom regexp engine.
 
 #### `AddPattern(pattern string, value T) error`
-Adds a regex pattern with its associated value to the table. **Note**: This
-method uses lazy compilation - the regex is not compiled until lookup is
+Adds a regexp pattern with its associated value to the table. **Note**: This
+method uses lazy compilation - the regexp is not compiled until lookup is
 performed.
 
 #### `AddPatternThenRecompile(pattern string, value T) error`
-Like AddPattern but immediately recompiles the regex. Use this when you need
+Like AddPattern but immediately recompiles the regexp. Use this when you need
 immediate validation of the pattern or when you're only adding one pattern.
 
 #### `Recompile() error`
-Manually rebuilds the union regex from all registered patterns. This is exposed
+Manually rebuilds the union regexp from all registered patterns. This is exposed
 to allow manual control over when recompilation, and hence error checking,
 occurs.
 
@@ -224,11 +224,11 @@ Like Lookup but returns a boolean success indicator instead of an error.
 ### Adding Patterns
 
 ```go
-table := regextable.NewRegexTable[string](true, false) // start anchored, not end anchored
+table := regexptable.NewRegexpTable[string](true, false) // start anchored, not end anchored
 
 err := table.AddPattern(`\d+`, "number")
 if err != nil {
-    // Handle regex compilation error
+    // Handle regexp compilation error
 }
 ```
 
@@ -263,38 +263,38 @@ if value, matches, ok := table.TryLookup(input); ok {
 - **Immediate compilation**: Best when you need immediate error feedback or adding single patterns
 - **Manual compilation**: Best when you want precise control over compilation timing
 
-### Union Regex Performance
+### Union Regexp Performance
 
-RegexTable compiles all patterns into a single union regex like:
+RegexpTable compiles all patterns into a single union regexp like:
 ```
-^(?:(?P<__REGEXTABLE_1__>pattern1)|(?P<__REGEXTABLE_2__>pattern2)|(?P<__REGEXTABLE_3__>pattern3))
+^(?:(?P<__REGEXPTABLE_1__>pattern1)|(?P<__REGEXPTABLE_2__>pattern2)|(?P<__REGEXPTABLE_3__>pattern3))
 ```
 
 This provides O(n) matching performance regardless of the number of patterns, as opposed to O(n*m) when testing patterns individually.
 
 ## Advanced Usage
 
-### Custom Regex Engines
+### Custom Regexp Engines
 
-The `RegexTable` supports different regex engines through the `RegexEngine` interface. This allows you to use regex engines with different named capture group syntaxes:
+The `RegexpTable` supports different regexp engines through the `RegexpEngine` interface. This allows you to use regexp engines with different named capture group syntaxes:
 
 ```go
 package main
 
 import (
     "fmt"
-    "github.com/sfkleach/regextable"
+    "github.com/sfkleach/regexptable"
 )
 
 func main() {
     // Standard Go engine: (?P<name>pattern)
-    goTa.ble := regextable.NewRegexTableBuilder[string]()
+    goTa.ble := regexptable.NewRegexpTableBuilder[string]()
         .AddPattern("test.*", "match")
         MustBuild()
 
     // .NET-style engine: (?<name>pattern)  
-    dotNetEngine := regextable.NewDotNetRegexEngine()
-    dotNetTable := regextable.NewRegexTableBuilderWithEngine[string](dotNetEngine)
+    dotNetEngine := regexptable.NewDotNetRegexpEngine()
+    dotNetTable := regexptable.NewRegexpTableBuilderWithEngine[string](dotNetEngine)
         .AddPattern("test.*", "match")
         .MustBuild()
 
@@ -302,33 +302,33 @@ func main() {
     value, _, found := goTable.TryLookup("testing")    // Returns "match", true
     value, _, found = dotNetTable.TryLookup("testing") // Returns "match", true
 
-    // Show the different internal regex formats
-    fmt.Printf("Go style:      %s\n", regextable.NewStandardRegexEngine().FormatNamedGroup("test", "pattern"))
+    // Show the different internal regexp formats
+    fmt.Printf("Go style:      %s\n", regexptable.NewStandardRegexpEngine().FormatNamedGroup("test", "pattern"))
     fmt.Printf(".NET style:    %s\n", dotNetEngine.FormatNamedGroup("test", "pattern"))
 }
 ```
 
-### Implementing Custom Regex Engines
+### Implementing Custom Regexp Engines
 
 ```go
-// Example: Python-style regex engine
-type PythonRegexEngine struct{}
+// Example: Python-style regexp engine
+type PythonRegexpEngine struct{}
 
-func (e *PythonRegexEngine) Compile(pattern string) (regextable.CompiledRegex, error) {
-    // Wrap Go's regex with your engine's interface
+func (e *PythonRegexpEngine) Compile(pattern string) (regexptable.CompiledRegexp, error) {
+    // Wrap Go's regexp with your engine's interface
     compiled, err := regexp.Compile(pattern)
     if err != nil {
         return nil, err
     }
-    return &regextable.StandardCompiledRegex{compiled}, nil
+    return &regexptable.StandardCompiledRegexp{compiled}, nil
 }
 
-func (e *PythonRegexEngine) FormatNamedGroup(groupName, pattern string) string {
+func (e *PythonRegexpEngine) FormatNamedGroup(groupName, pattern string) string {
     return fmt.Sprintf("(?P<%s>%s)", groupName, pattern) // Python uses same as Go
 }
 
 // Use your custom engine
-pythonTable := regextable.NewRegexTableBuilderWithEngine[string](&PythonRegexEngine{}).
+pythonTable := regexptable.NewRegexpTableBuilderWithEngine[string](&PythonRegexpEngine{}).
     AddPattern("test.*", "match").
     MustBuild()
 ```
@@ -341,7 +341,7 @@ type TokenInfo struct {
     Category string
 }
 
-table := regextable.NewRegexTable[TokenInfo]()
+table := regexptable.NewRegexpTable[TokenInfo]()
 
 // Add complex patterns with rich metadata
 table.AddPattern(`\b(if|else|while|for)\b`, TokenInfo{
@@ -363,7 +363,7 @@ if info, matches, err := table.Lookup("if"); err == nil {
 ### Submatch Access
 
 ```go
-table := regextable.NewRegexTable[string]()
+table := regexptable.NewRegexpTable[string]()
 
 // Pattern with capture groups
 table.AddPattern(`(\d{4})-(\d{2})-(\d{2})`, "date")
@@ -379,9 +379,9 @@ if value, matches, err := table.Lookup("2023-12-25"); err == nil {
 ## Implementation Notes
 
 - Uses Go's built-in `regexp` package with named capture groups
-- Auto-generates unique pattern names with reserved `__REGEXTABLE_` prefix  
-- Compiles all patterns into a single union regex for optimal performance
+- Auto-generates unique pattern names with reserved `__REGEXPTABLE_` prefix  
+- Compiles all patterns into a single union regexp for optimal performance
 - Defers rebuilds to minimize overhead when adding multiple patterns (although
-  this also defers the check for regex syntax validity)
+  this also defers the check for regexp syntax validity)
 - Thread-safe for concurrent reads after compilation (not thread-safe for
   add/remove)

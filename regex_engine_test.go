@@ -1,45 +1,45 @@
-package regextable
+package regexptable
 
 import (
 	"fmt"
 	"testing"
 )
 
-// MockRegexEngine implements RegexEngine for testing with different naming conventions.
-type MockRegexEngine struct {
-	compiledRegexes map[string]*MockCompiledRegex
+// MockRegexpEngine implements RegexpEngine for testing with different naming conventions.
+type MockRegexpEngine struct {
+	compiledRegexps map[string]*MockCompiledRegexp
 	groupSyntax     string // e.g., "(?P<%s>%s)" for Go, "(?<%s>%s)" for .NET
 }
 
-// NewMockRegexEngine creates a new mock engine with the specified group syntax.
-func NewMockRegexEngine(groupSyntax string) *MockRegexEngine {
-	return &MockRegexEngine{
-		compiledRegexes: make(map[string]*MockCompiledRegex),
+// NewMockRegexpEngine creates a new mock engine with the specified group syntax.
+func NewMockRegexpEngine(groupSyntax string) *MockRegexpEngine {
+	return &MockRegexpEngine{
+		compiledRegexps: make(map[string]*MockCompiledRegexp),
 		groupSyntax:     groupSyntax,
 	}
 }
 
 // Compile returns a pre-configured mock or creates a simple one.
-func (e *MockRegexEngine) Compile(pattern string) (CompiledRegex, error) {
-	if compiled, exists := e.compiledRegexes[pattern]; exists {
+func (e *MockRegexpEngine) Compile(pattern string) (CompiledRegexp, error) {
+	if compiled, exists := e.compiledRegexps[pattern]; exists {
 		return compiled, nil
 	}
 	// Return a simple mock that doesn't actually match anything
-	return &MockCompiledRegex{pattern: pattern}, nil
+	return &MockCompiledRegexp{pattern: pattern}, nil
 }
 
 // FormatNamedGroup uses the configured group syntax.
-func (e *MockRegexEngine) FormatNamedGroup(groupName, pattern string) string {
+func (e *MockRegexpEngine) FormatNamedGroup(groupName, pattern string) string {
 	return fmt.Sprintf(e.groupSyntax, groupName, pattern)
 }
 
-// SetCompiledRegex allows tests to configure what a pattern should return.
-func (e *MockRegexEngine) SetCompiledRegex(pattern string, compiled *MockCompiledRegex) {
-	e.compiledRegexes[pattern] = compiled
+// SetCompiledRegexp allows tests to configure what a pattern should return.
+func (e *MockRegexpEngine) SetCompiledRegexp(pattern string, compiled *MockCompiledRegexp) {
+	e.compiledRegexps[pattern] = compiled
 }
 
-// MockCompiledRegex implements CompiledRegex for testing.
-type MockCompiledRegex struct {
+// MockCompiledRegexp implements CompiledRegexp for testing.
+type MockCompiledRegexp struct {
 	pattern     string
 	matchResult []string
 	subexpNames []string
@@ -47,14 +47,14 @@ type MockCompiledRegex struct {
 }
 
 // SetMatchResult configures what FindStringSubmatch should return.
-func (r *MockCompiledRegex) SetMatchResult(matches []string, subexpNames []string) {
+func (r *MockCompiledRegexp) SetMatchResult(matches []string, subexpNames []string) {
 	r.matchResult = matches
 	r.subexpNames = subexpNames
 	r.shouldMatch = matches != nil
 }
 
 // FindStringSubmatch returns the configured match result.
-func (r *MockCompiledRegex) FindStringSubmatch(s string) []string {
+func (r *MockCompiledRegexp) FindStringSubmatch(s string) []string {
 	if r.shouldMatch {
 		return r.matchResult
 	}
@@ -62,11 +62,11 @@ func (r *MockCompiledRegex) FindStringSubmatch(s string) []string {
 }
 
 // SubexpNames returns the configured subexpression names.
-func (r *MockCompiledRegex) SubexpNames() []string {
+func (r *MockCompiledRegexp) SubexpNames() []string {
 	return r.subexpNames
 }
 
-func TestRegexEngine_DifferentNamingConventions(t *testing.T) {
+func TestRegexpEngine_DifferentNamingConventions(t *testing.T) {
 	testCases := []struct {
 		name        string
 		groupSyntax string
@@ -91,7 +91,7 @@ func TestRegexEngine_DifferentNamingConventions(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			engine := NewMockRegexEngine(tc.groupSyntax)
+			engine := NewMockRegexpEngine(tc.groupSyntax)
 			result := engine.FormatNamedGroup("test_group", "hello")
 			if result != tc.expected {
 				t.Errorf("Expected %q, got %q", tc.expected, result)
@@ -100,20 +100,20 @@ func TestRegexEngine_DifferentNamingConventions(t *testing.T) {
 	}
 }
 
-func TestRegexTable_WithCustomEngine(t *testing.T) {
+func TestRegexpTable_WithCustomEngine(t *testing.T) {
 	// Create a mock engine with .NET-style syntax
-	mockEngine := NewMockRegexEngine("(?<%s>%s)")
+	mockEngine := NewMockRegexpEngine("(?<%s>%s)")
 
-	// Create a mock compiled regex that will match "hello"
-	mockCompiled := &MockCompiledRegex{}
+	// Create a mock compiled regexp that will match "hello"
+	mockCompiled := &MockCompiledRegexp{}
 	mockCompiled.SetMatchResult(
-		[]string{"hello", "hello"},       // full match and capture group
-		[]string{"", "__REGEXTABLE_1__"}, // subexp names
+		[]string{"hello", "hello"},        // full match and capture group
+		[]string{"", "__REGEXPTABLE_1__"}, // subexp names
 	)
 
 	// Configure the engine to return our mock when compiling the union pattern
 	// This is a bit artificial but demonstrates the concept
-	table := NewRegexTableWithEngine[string](mockEngine, true, false)
+	table := NewRegexpTableWithEngine[string](mockEngine, true, false)
 
 	// Add a pattern - this should use the .NET syntax
 	err := table.AddPattern("hello", "greeting")
@@ -122,14 +122,14 @@ func TestRegexTable_WithCustomEngine(t *testing.T) {
 	}
 
 	// Verify the pattern was formatted with .NET syntax
-	expectedPattern := "(?<__REGEXTABLE_1__>hello)"
+	expectedPattern := "(?<__REGEXPTABLE_1__>hello)"
 	if len(table.patternNames) != 1 || table.patternNames[0] != expectedPattern {
 		t.Errorf("Expected pattern %q, got %q", expectedPattern, table.patternNames[0])
 	}
 }
 
-func TestStandardRegexEngine_FormatNamedGroup(t *testing.T) {
-	engine := NewStandardRegexEngine()
+func TestStandardRegexpEngine_FormatNamedGroup(t *testing.T) {
+	engine := NewStandardRegexpEngine()
 	result := engine.FormatNamedGroup("testgroup", "pattern")
 	expected := "(?P<testgroup>pattern)"
 

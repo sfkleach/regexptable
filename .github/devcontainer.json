@@ -1,5 +1,5 @@
 {
-    "name": "RegexTable Go Development",
+    "name": "RegexpTable Go Development",
     "image": "mcr.microsoft.com/devcontainers/go:1-1.24-bookworm",
     
     "features": {
@@ -57,7 +57,7 @@
     "remoteUser": "vscode",
     
     "mounts": [
-        "source=${localWorkspaceFolder}/.git,target=/workspaces/regextable/.git,type=bind,consistency=cached"
+        "source=${localWorkspaceFolder}/.git,target=/workspaces/regexptable/.git,type=bind,consistency=cached"
     ],
 
     "forwardPorts": [],

@@ -1,3 +1,3 @@
-module github.com/sfkleach/regextable
+module github.com/sfkleach/regexptable
 
 go 1.24.2

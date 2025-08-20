@@ -1,4 +1,4 @@
-package regextable
+package regexptable
 
 import (
 	"testing"
@@ -14,8 +14,8 @@ const (
 	TokenVariable
 )
 
-func TestRegexTable_Basic(t *testing.T) {
-	table := NewRegexTable[TokenType](true, false) // Start anchoring, no end anchoring
+func TestRegexpTable_Basic(t *testing.T) {
+	table := NewRegexpTable[TokenType](true, false) // Start anchoring, no end anchoring
 
 	// Add some test patterns using deferred compilation
 	err := table.AddPattern(`form\w*`, TokenFormStart)
@@ -74,8 +74,8 @@ func TestRegexTable_Basic(t *testing.T) {
 	}
 }
 
-func TestRegexTable_TryLookup(t *testing.T) {
-	table := NewRegexTable[string](true, false) // Start anchoring, no end anchoring
+func TestRegexpTable_TryLookup(t *testing.T) {
+	table := NewRegexpTable[string](true, false) // Start anchoring, no end anchoring
 
 	err := table.AddPattern(`hello`, "greeting")
 	if err != nil {
@@ -107,9 +107,9 @@ func TestRegexTable_TryLookup(t *testing.T) {
 	}
 }
 
-func TestRegexTable_LazyVsImmediateCompilation(t *testing.T) {
+func TestRegexpTable_LazyVsImmediateCompilation(t *testing.T) {
 	// Test lazy compilation
-	lazy := NewRegexTable[string](true, false) // Start anchoring, no end anchoring
+	lazy := NewRegexpTable[string](true, false) // Start anchoring, no end anchoring
 
 	// These should succeed without compilation
 	err := lazy.AddPattern("valid", "value1")
@@ -126,11 +126,11 @@ func TestRegexTable_LazyVsImmediateCompilation(t *testing.T) {
 	// Classification should fail due to invalid regex
 	_, _, err = lazy.Lookup("test")
 	if err == nil {
-		t.Error("Expected lookup to fail due to invalid regex")
+		t.Error("Expected lookup to fail due to invalid regexp")
 	}
 
 	// Test immediate compilation
-	immediate := NewRegexTable[string](true, false) // Start anchoring, no end anchoring
+	immediate := NewRegexpTable[string](true, false) // Start anchoring, no end anchoring
 
 	// Valid pattern should succeed
 	err = immediate.AddAndCheckPattern("valid", "value1")
@@ -141,12 +141,12 @@ func TestRegexTable_LazyVsImmediateCompilation(t *testing.T) {
 	// Invalid pattern should fail immediately
 	err = immediate.AddAndCheckPattern("[invalid", "value2") // Invalid regex
 	if err == nil {
-		t.Error("Expected immediate AddPattern to fail with invalid regex")
+		t.Error("Expected immediate AddPattern to fail with invalid regexp")
 	}
 }
 
-func TestRegexTable_ManualRecompile(t *testing.T) {
-	table := NewRegexTable[string](true, false) // Start anchoring, no end anchoring
+func TestRegexpTable_ManualRecompile(t *testing.T) {
+	table := NewRegexpTable[string](true, false) // Start anchoring, no end anchoring
 
 	// Add patterns without compilation
 	err := table.AddPattern("hello", "greeting")
@@ -175,10 +175,10 @@ func TestRegexTable_ManualRecompile(t *testing.T) {
 	}
 }
 
-func TestRegexTable_AnchoringOptions(t *testing.T) {
+func TestRegexpTable_AnchoringOptions(t *testing.T) {
 	// Test default anchoring (start anchored, not end anchored)
 	t.Run("DefaultAnchoring", func(t *testing.T) {
-		table := NewRegexTable[string](true, false) // Start anchoring, no end anchoring
+		table := NewRegexpTable[string](true, false) // Start anchoring, no end anchoring
 
 		err := table.AddPattern("hello", "greeting")
 		if err != nil {
@@ -210,7 +210,7 @@ func TestRegexTable_AnchoringOptions(t *testing.T) {
 
 	// Test no anchoring
 	t.Run("NoAnchoring", func(t *testing.T) {
-		table := NewRegexTableWithEngine[string](&StandardRegexEngine{}, false, false)
+		table := NewRegexpTableWithEngine[string](&StandardRegexpEngine{}, false, false)
 
 		err := table.AddPattern("hello", "greeting")
 		if err != nil {
@@ -231,7 +231,7 @@ func TestRegexTable_AnchoringOptions(t *testing.T) {
 
 	// Test full anchoring (both start and end)
 	t.Run("FullAnchoring", func(t *testing.T) {
-		table := NewRegexTableWithEngine[string](&StandardRegexEngine{}, true, true)
+		table := NewRegexpTableWithEngine[string](&StandardRegexpEngine{}, true, true)
 
 		err := table.AddPattern("hello", "greeting")
 		if err != nil {
@@ -258,7 +258,7 @@ func TestRegexTable_AnchoringOptions(t *testing.T) {
 
 	// Test end anchoring only
 	t.Run("EndAnchoringOnly", func(t *testing.T) {
-		table := NewRegexTableWithEngine[string](&StandardRegexEngine{}, false, true)
+		table := NewRegexpTableWithEngine[string](&StandardRegexpEngine{}, false, true)
 
 		err := table.AddPattern("world", "place")
 		if err != nil {
@@ -289,8 +289,8 @@ func TestRegexTable_AnchoringOptions(t *testing.T) {
 	})
 }
 
-func TestRegexTable_LookupOrElse(t *testing.T) {
-	table := NewRegexTable[string](true, false) // Start anchoring, no end anchoring
+func TestRegexpTable_LookupOrElse(t *testing.T) {
+	table := NewRegexpTable[string](true, false) // Start anchoring, no end anchoring
 
 	// Add test patterns
 	err := table.AddPattern("hello", "greeting")
@@ -352,7 +352,7 @@ func TestRegexTable_LookupOrElse(t *testing.T) {
 
 	// Test with typed table using different types
 	t.Run("typed table with int values", func(t *testing.T) {
-		intTable := NewRegexTable[int](true, false)
+		intTable := NewRegexpTable[int](true, false)
 		err := intTable.AddPattern("one", 1)
 		if err != nil {
 			t.Fatalf("Failed to add pattern: %v", err)

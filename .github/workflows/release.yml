@@ -30,7 +30,7 @@ jobs:
     - name: Build examples
       run: |
         cd builder_example
-        go build -o regextable-example .
+        go build -o regexptable-example .
 
     - name: Create Release
       uses: actions/create-release@v1
@@ -42,12 +42,12 @@ jobs:
         body: |
           ## Changes
           
-          See [CHANGELOG.md](https://github.com/sfkleach/regextable/blob/main/CHANGELOG.md) for full details. This changelog is maintained manually.
+          See [CHANGELOG.md](https://github.com/sfkleach/regexptable/blob/main/CHANGELOG.md) for full details. This changelog is maintained manually.
           
           ## Installation
           
           ```bash
-          go get github.com/sfkleach/regextable@${{ github.ref_name }}
+          go get github.com/sfkleach/regexptable@${{ github.ref_name }}
           ```
         draft: false
         prerelease: false

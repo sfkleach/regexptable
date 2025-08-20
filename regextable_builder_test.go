@@ -1,12 +1,12 @@
-package regextable
+package regexptable
 
 import (
 	"strings"
 	"testing"
 )
 
-func TestRegexTableBuilder_Basic(t *testing.T) {
-	builder := NewRegexTableBuilder[string]()
+func TestRegexpTableBuilder_Basic(t *testing.T) {
+	builder := NewRegexpTableBuilder[string]()
 
 	// Chain pattern additions
 	table, err := builder.
@@ -47,8 +47,8 @@ func TestRegexTableBuilder_Basic(t *testing.T) {
 	}
 }
 
-func TestRegexTableBuilder_InvalidPattern(t *testing.T) {
-	builder := NewRegexTableBuilder[string]()
+func TestRegexpTableBuilder_InvalidPattern(t *testing.T) {
+	builder := NewRegexpTableBuilder[string]()
 
 	// Add valid and invalid patterns
 	table, err := builder.
@@ -70,9 +70,9 @@ func TestRegexTableBuilder_InvalidPattern(t *testing.T) {
 	}
 }
 
-func TestRegexTableBuilder_MustBuild(t *testing.T) {
+func TestRegexpTableBuilder_MustBuild(t *testing.T) {
 	// Test successful MustBuild
-	builder := NewRegexTableBuilder[int]()
+	builder := NewRegexpTableBuilder[int]()
 	table := builder.
 		AddPattern("test", 42).
 		MustBuild(true, false)
@@ -89,12 +89,12 @@ func TestRegexTableBuilder_MustBuild(t *testing.T) {
 		}
 	}()
 
-	invalidBuilder := NewRegexTableBuilder[int]()
+	invalidBuilder := NewRegexpTableBuilder[int]()
 	invalidBuilder.AddPattern("[invalid", 1).MustBuild(true, false) // Should panic
 }
 
-func TestRegexTableBuilder_Clone(t *testing.T) {
-	original := NewRegexTableBuilder[string]()
+func TestRegexpTableBuilder_Clone(t *testing.T) {
+	original := NewRegexpTableBuilder[string]()
 	original.AddPattern("test1", "value1")
 	original.AddPattern("test2", "value2")
 
@@ -127,8 +127,8 @@ func TestRegexTableBuilder_Clone(t *testing.T) {
 	}
 }
 
-func TestRegexTableBuilder_EmptyBuild(t *testing.T) {
-	builder := NewRegexTableBuilder[string]()
+func TestRegexpTableBuilder_EmptyBuild(t *testing.T) {
+	builder := NewRegexpTableBuilder[string]()
 
 	// Build empty table
 	table, err := builder.Build(true, false)
@@ -143,8 +143,8 @@ func TestRegexTableBuilder_EmptyBuild(t *testing.T) {
 	}
 }
 
-func TestRegexTableBuilder_ReuseAfterBuild(t *testing.T) {
-	builder := NewRegexTableBuilder[string]()
+func TestRegexpTableBuilder_ReuseAfterBuild(t *testing.T) {
+	builder := NewRegexpTableBuilder[string]()
 
 	// Build first table
 	table1, err := builder.
@@ -180,10 +180,10 @@ func TestRegexTableBuilder_ReuseAfterBuild(t *testing.T) {
 	}
 }
 
-func TestRegexTableBuilder_Anchoring(t *testing.T) {
+func TestRegexpTableBuilder_Anchoring(t *testing.T) {
 	// Test builder with default anchoring
 	t.Run("DefaultAnchoring", func(t *testing.T) {
-		table, err := NewRegexTableBuilder[string]().
+		table, err := NewRegexpTableBuilder[string]().
 			AddPattern("hello", "greeting").
 			Build(true, false) // Start anchoring, no end anchoring
 
@@ -206,7 +206,7 @@ func TestRegexTableBuilder_Anchoring(t *testing.T) {
 
 	// Test builder with custom anchoring
 	t.Run("CustomAnchoring", func(t *testing.T) {
-		table, err := NewRegexTableBuilder[string]().
+		table, err := NewRegexpTableBuilder[string]().
 			AddPattern("world", "place").
 			Build(false, true) // No start anchor, end anchor
 
@@ -229,7 +229,7 @@ func TestRegexTableBuilder_Anchoring(t *testing.T) {
 
 	// Test builder with no anchoring
 	t.Run("NoAnchoring", func(t *testing.T) {
-		table, err := NewRegexTableBuilder[string]().
+		table, err := NewRegexpTableBuilder[string]().
 			AddPattern("test", "value").
 			Build(false, false) // No anchoring
 
@@ -249,7 +249,7 @@ func TestRegexTableBuilder_Anchoring(t *testing.T) {
 
 	// Test builder with full anchoring
 	t.Run("FullAnchoring", func(t *testing.T) {
-		table, err := NewRegexTableBuilder[string]().
+		table, err := NewRegexpTableBuilder[string]().
 			AddPattern("exact", "match").
 			Build(true, true) // Full anchoring
 
@@ -271,10 +271,10 @@ func TestRegexTableBuilder_Anchoring(t *testing.T) {
 	})
 }
 
-func TestRegexTableBuilder_AddSubPatterns(t *testing.T) {
+func TestRegexpTableBuilder_AddSubPatterns(t *testing.T) {
 	// Test empty patterns slice
 	t.Run("EmptyPatterns", func(t *testing.T) {
-		builder := NewRegexTableBuilder[string]()
+		builder := NewRegexpTableBuilder[string]()
 
 		// Add empty patterns slice - should do nothing
 		table, err := builder.
@@ -301,7 +301,7 @@ func TestRegexTableBuilder_AddSubPatterns(t *testing.T) {
 
 	// Test single pattern in slice
 	t.Run("SinglePattern", func(t *testing.T) {
-		builder := NewRegexTableBuilder[string]()
+		builder := NewRegexpTableBuilder[string]()
 
 		table, err := builder.
 			AddSubPatterns([]string{"hello"}, "greeting").
@@ -319,7 +319,7 @@ func TestRegexTableBuilder_AddSubPatterns(t *testing.T) {
 
 	// Test multiple patterns creating alternation
 	t.Run("MultiplePatterns", func(t *testing.T) {
-		builder := NewRegexTableBuilder[string]()
+		builder := NewRegexpTableBuilder[string]()
 
 		// Create alternation of greetings
 		table, err := builder.
@@ -356,11 +356,11 @@ func TestRegexTableBuilder_AddSubPatterns(t *testing.T) {
 		}
 	})
 
-	// Test complex patterns with regex syntax
+	// Test complex patterns with regexp syntax
 	t.Run("ComplexPatterns", func(t *testing.T) {
-		builder := NewRegexTableBuilder[string]()
+		builder := NewRegexpTableBuilder[string]()
 
-		// Patterns with different regex features - creates (?:\d+|[a-z]+|[A-Z]+)
+		// Patterns with different regexpfeatures - creates (?:\d+|[a-z]+|[A-Z]+)
 		// With start anchoring, this becomes ^(?:(?:\d+|[a-z]+|[A-Z]+))
 		table, err := builder.
 			AddSubPatterns([]string{`\d+`, `[a-z]+`, `[A-Z]+`}, "pattern_match").
@@ -397,9 +397,9 @@ func TestRegexTableBuilder_AddSubPatterns(t *testing.T) {
 		}
 	})
 
-	// Test patterns with special regex characters that need proper grouping
+	// Test patterns with special regexp characters that need proper grouping
 	t.Run("PatternsWithSpecialChars", func(t *testing.T) {
-		builder := NewRegexTableBuilder[string]()
+		builder := NewRegexpTableBuilder[string]()
 
 		// These patterns contain pipe characters, which will be treated as alternation
 		// AddSubPatterns(["a|b", "c|d", "e"]) creates (?:a|b|c|d|e)
@@ -444,7 +444,7 @@ func TestRegexTableBuilder_AddSubPatterns(t *testing.T) {
 
 	// Test patterns with literal special characters (properly escaped)
 	t.Run("LiteralSpecialChars", func(t *testing.T) {
-		builder := NewRegexTableBuilder[string]()
+		builder := NewRegexpTableBuilder[string]()
 
 		// To match literal pipe characters, they need to be escaped
 		// AddSubPatterns(["a\\|b", "c\\|d", "e"]) creates (?:a\|b|c\|d|e)
@@ -485,7 +485,7 @@ func TestRegexTableBuilder_AddSubPatterns(t *testing.T) {
 
 	// Test mixing AddSubPatterns with regular AddPattern
 	t.Run("MixWithAddPattern", func(t *testing.T) {
-		builder := NewRegexTableBuilder[string]()
+		builder := NewRegexpTableBuilder[string]()
 
 		table, err := builder.
 			AddPattern("single", "single_value").
@@ -519,7 +519,7 @@ func TestRegexTableBuilder_AddSubPatterns(t *testing.T) {
 	// Test with different value types
 	t.Run("DifferentValueTypes", func(t *testing.T) {
 		// Test with integer values
-		intBuilder := NewRegexTableBuilder[int]()
+		intBuilder := NewRegexpTableBuilder[int]()
 
 		intTable, err := intBuilder.
 			AddSubPatterns([]string{"one", "1"}, 1).
@@ -543,9 +543,9 @@ func TestRegexTableBuilder_AddSubPatterns(t *testing.T) {
 
 	// Test invalid patterns in AddSubPatterns
 	t.Run("InvalidPatterns", func(t *testing.T) {
-		builder := NewRegexTableBuilder[string]()
+		builder := NewRegexpTableBuilder[string]()
 
-		// Include an invalid regex pattern
+		// Include an invalid regexp pattern
 		_, err := builder.
 			AddSubPatterns([]string{"valid", "[invalid"}, "test").
 			Build(true, false)
@@ -561,10 +561,10 @@ func TestRegexTableBuilder_AddSubPatterns(t *testing.T) {
 	})
 }
 
-func TestRegexTableBuilder_FluentSubPatterns(t *testing.T) {
+func TestRegexpTableBuilder_FluentSubPatterns(t *testing.T) {
 	// Test the fluent interface for building sub-patterns
 	t.Run("BasicFluentInterface", func(t *testing.T) {
-		builder := NewRegexTableBuilder[string]()
+		builder := NewRegexpTableBuilder[string]()
 
 		table, err := builder.
 			BeginAddSubPatterns().
@@ -603,7 +603,7 @@ func TestRegexTableBuilder_FluentSubPatterns(t *testing.T) {
 
 	// Test empty fluent sub-patterns
 	t.Run("EmptyFluentSubPatterns", func(t *testing.T) {
-		builder := NewRegexTableBuilder[string]()
+		builder := NewRegexpTableBuilder[string]()
 
 		table, err := builder.
 			BeginAddSubPatterns().
@@ -624,7 +624,7 @@ func TestRegexTableBuilder_FluentSubPatterns(t *testing.T) {
 
 	// Test single pattern in fluent interface
 	t.Run("SingleFluentPattern", func(t *testing.T) {
-		builder := NewRegexTableBuilder[string]()
+		builder := NewRegexpTableBuilder[string]()
 
 		table, err := builder.
 			BeginAddSubPatterns().
@@ -644,7 +644,7 @@ func TestRegexTableBuilder_FluentSubPatterns(t *testing.T) {
 
 	// Test mixing fluent interface with regular methods
 	t.Run("MixFluentWithRegular", func(t *testing.T) {
-		builder := NewRegexTableBuilder[string]()
+		builder := NewRegexpTableBuilder[string]()
 
 		table, err := builder.
 			AddPattern("single", "single_value").
@@ -680,7 +680,7 @@ func TestRegexTableBuilder_FluentSubPatterns(t *testing.T) {
 
 	// Test complex patterns in fluent interface
 	t.Run("ComplexFluentPatterns", func(t *testing.T) {
-		builder := NewRegexTableBuilder[int]()
+		builder := NewRegexpTableBuilder[int]()
 
 		table, err := builder.
 			BeginAddSubPatterns().
@@ -720,9 +720,9 @@ func TestRegexTableBuilder_FluentSubPatterns(t *testing.T) {
 	})
 }
 
-func TestRegexTableBuilder_Clear(t *testing.T) {
+func TestRegexpTableBuilder_Clear(t *testing.T) {
 	// Build a table with some patterns
-	builder := NewRegexTableBuilder[string]().
+	builder := NewRegexpTableBuilder[string]().
 		AddPattern("hello", "greeting").
 		AddPattern("world", "place").
 		AddPattern(`\d+`, "number")

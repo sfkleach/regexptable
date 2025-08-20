@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	regextable "github.com/sfkleach/regextable"
+	"github.com/sfkleach/regexptable"
 )
 
 // TokenType represents different types of tokens
@@ -36,10 +36,10 @@ func (t TokenType) String() string {
 }
 
 func main() {
-	fmt.Println("=== RegexTableBuilder Demo ===")
+	fmt.Println("=== RegexpTableBuilder Demo ===")
 
 	// Using the builder pattern - no need to think about compilation!
-	table, err := regextable.NewRegexTableBuilder[TokenType]().
+	table, err := regexptable.NewRegexpTableBuilder[TokenType]().
 		AddPattern(`\b(if|else|while|for|return|function)\b`, TokenKeyword).
 		AddPattern(`\b[a-zA-Z_][a-zA-Z0-9_]*\b`, TokenIdentifier).
 		AddPattern(`\b\d+(\.\d+)?\b`, TokenNumber).
@@ -48,7 +48,7 @@ func main() {
 		Build(true, false) // Start anchoring, no end anchoring
 
 	if err != nil {
-		log.Fatalf("Failed to build regex table: %v", err)
+		log.Fatalf("Failed to build regexp table: %v", err)
 	}
 
 	fmt.Println("✓ Table built successfully with single compilation!")
@@ -76,7 +76,7 @@ func main() {
 	fmt.Println("\n=== Builder Chaining Demo ===")
 
 	// Show how builder can be reused and chained
-	baseBuilder := regextable.NewRegexTableBuilder[string]().
+	baseBuilder := regexptable.NewRegexpTableBuilder[string]().
 		AddPattern(`form\w*`, "form_start").
 		AddPattern(`end\w*`, "form_end")
 
@@ -124,7 +124,7 @@ func main() {
 	fmt.Println("\n=== MustBuild for Static Configs ===")
 
 	// For static configurations where patterns are known to be valid
-	staticTable := regextable.NewRegexTableBuilder[string]().
+	staticTable := regexptable.NewRegexpTableBuilder[string]().
 		AddPattern(`config_\w+`, "config").
 		AddPattern(`static_\w+`, "static").
 		MustBuild(true, false) // Will panic if patterns are invalid
