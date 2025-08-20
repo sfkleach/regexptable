@@ -123,5 +123,5 @@ jobs:
 
     - name: Build example
       run: |
-        cd builder_example
+        cd example
         go build .
