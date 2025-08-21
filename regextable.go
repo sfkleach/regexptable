@@ -31,8 +31,10 @@ import (
 
 // ValueAndPattern holds both the value and original pattern for a regexp group.
 type ValueAndPattern[T any] struct {
+	GroupName       string // e.g. __REGEXPTABLE_1
+	namedPattern    string // e.g. (?P<__REGEXPTABLE_1>pattern)
 	Value           T
-	Pattern         string
+	Pattern         string         // e.g. pattern
 	compiledPattern CompiledRegexp // Cached compiled pattern for disambiguation
 }
 
@@ -41,8 +43,8 @@ type ValueAndPattern[T any] struct {
 type RegexpTable[T any] struct {
 	engine         RegexpEngine
 	compiled       CompiledRegexp
-	lookup         map[string]ValueAndPattern[T] // Maps group names to values and original patterns
-	patternNames   []string
+	lookup         []*ValueAndPattern[T]
+	maplets        []*ValueAndPattern[T]
 	nextGroupID    int
 	needsRecompile bool
 	anchorStart    bool // Whether to anchor patterns to start of string with ^
@@ -58,8 +60,7 @@ func NewRegexpTable[T any](anchorStart, anchorEnd bool) *RegexpTable[T] {
 func NewRegexpTableWithEngine[T any](engine RegexpEngine, anchorStart, anchorEnd bool) *RegexpTable[T] {
 	return &RegexpTable[T]{
 		engine:         engine,
-		lookup:         make(map[string]ValueAndPattern[T]),
-		patternNames:   make([]string, 0),
+		maplets:        make([]*ValueAndPattern[T], 0),
 		nextGroupID:    1,
 		needsRecompile: false,
 		anchorStart:    anchorStart,
@@ -77,11 +78,15 @@ func (rt *RegexpTable[T]) AddPattern(pattern string, value T) error {
 	// Create a unique capture group name using the engine's syntax
 	namedPattern := rt.engine.FormatNamedGroup(groupName, pattern)
 
-	rt.patternNames = append(rt.patternNames, namedPattern)
-	rt.lookup[groupName] = ValueAndPattern[T]{
-		Value:   value,
-		Pattern: pattern,
-	}
+	rt.maplets = append(rt.maplets,
+		&ValueAndPattern[T]{
+			GroupName:    groupName,
+			namedPattern: namedPattern,
+			Value:        value,
+			Pattern:      pattern,
+		},
+	)
+
 	rt.needsRecompile = true
 
 	return nil
@@ -121,12 +126,12 @@ func (rt *RegexpTable[T]) anchorPattern(pattern string) string {
 func (rt *RegexpTable[T]) validatePatterns() []string {
 	var invalidPatterns []string
 
-	for groupName, valueAndPattern := range rt.lookup {
+	for _, valueAndPattern := range rt.maplets {
 		// Try to compile this pattern individually with proper anchoring
 		anchoredPattern := rt.anchorPattern(valueAndPattern.Pattern)
 		_, err := rt.engine.Compile(anchoredPattern)
 		if err != nil {
-			invalidPatterns = append(invalidPatterns, fmt.Sprintf("group %s (pattern: %s): %v", groupName, valueAndPattern.Pattern, err))
+			invalidPatterns = append(invalidPatterns, fmt.Sprintf("group %s (pattern: %s): %v", valueAndPattern.GroupName, valueAndPattern.Pattern, err))
 		}
 	}
 
@@ -136,15 +141,21 @@ func (rt *RegexpTable[T]) validatePatterns() []string {
 // Recompile rebuilds the union regexp from all registered patterns.
 // This is exposed to allow manual control over when recompilation occurs.
 func (rt *RegexpTable[T]) Recompile() error {
-	if len(rt.patternNames) == 0 {
+	if len(rt.maplets) == 0 {
 		rt.compiled = nil
 		rt.needsRecompile = false
 		return nil
 	}
 
 	// Create union pattern with proper anchoring
-	unionPattern := strings.Join(rt.patternNames, "|")
-	anchoredUnionPattern := rt.anchorPattern(unionPattern)
+	var unionPattern strings.Builder
+	for i, entry := range rt.maplets {
+		if i > 0 {
+			unionPattern.WriteString("|")
+		}
+		unionPattern.WriteString(entry.namedPattern)
+	}
+	anchoredUnionPattern := rt.anchorPattern(unionPattern.String())
 
 	var err error
 	rt.compiled, err = rt.engine.Compile(anchoredUnionPattern)
@@ -157,6 +168,28 @@ func (rt *RegexpTable[T]) Recompile() error {
 		// Fallback to original error if we can't identify specific patterns
 		return fmt.Errorf("failed to compile union regexp: %w", err)
 	}
+
+	// We now need to build the lookup slice. For each name in the SubexpNames
+	// we use the corresponding ValueAndPattern from the maplets slice OR nil
+	// if the name is "". The result is congruent to the strings returned by a match.
+	names := rt.compiled.SubexpNames()
+	n := 0
+	rt.lookup = make([]*ValueAndPattern[T], 0)
+	for _, name := range names {
+		// Note that the SubexpNames will include the prefixed names in
+		// the set order they were generated in. So we can rely on simply
+		// walking the maplets slice.
+		if strings.HasPrefix(name, "__REGEXPTABLE_") {
+			rt.lookup = append(rt.lookup, rt.maplets[n]) // Skip the first empty name
+			n++
+		} else {
+			rt.lookup = append(rt.lookup, nil)
+		}
+	}
+	// for x, name := range names {
+	// 	fmt.Println("subexpnames", x, name)
+	// }
+	// fmt.Println("lookup", len(rt.lookup), rt.lookup) // Debugging output to see lookup
 
 	rt.needsRecompile = false
 	return nil
@@ -189,47 +222,52 @@ func (rt *RegexpTable[T]) Lookup(input string) (T, []string, error) {
 	if matches == nil {
 		return zero, nil, fmt.Errorf("no pattern matched")
 	}
+	// for x, m := range matches {
+	// 	fmt.Println("match", x, m)
+	// }
 
-	// Find which named group matched by checking submatches
-	subexpNames := rt.compiled.SubexpNames()
-	for i, name := range subexpNames {
-		// Defensive check: ensure we don't exceed matches slice bounds
-		// (SubexpNames and matches should have same length, but we use pluggable engines)
-		if name != "" && i < len(matches) && matches[i] != "" {
-			if valueAndPattern, exists := rt.lookup[name]; exists {
-				return valueAndPattern.Value, matches, nil
+	// Note that rt.lookup and matches will be congruent (we force this in Recompile).
+	for i, valueAndPattern := range rt.lookup {
+		// fmt.Println("valueAndPattern", i, valueAndPattern) // Debugging output to see lookup and matches
+		if valueAndPattern != nil && i < len(matches) && matches[i] != "" {
+			// Now find the set of matches that applies for this lookup.
+			our_matches := make([]string, 1)
+			our_matches[0] = matches[i]
+			for j := i + 1; j < len(rt.lookup); j++ {
+				if rt.lookup[j] != nil {
+					// Stop at the next __REGEXPTABLE capture group.
+					break
+				}
+				// This must be a capture group that is part of the matching key.
+				our_matches = append(our_matches, matches[j])
 			}
+			return valueAndPattern.Value, our_matches, nil
 		}
 	}
 
 	// If all matches are empty strings, we need to disambiguate by testing individual patterns
 	// This handles the case where multiple patterns could match empty strings or when alternation
-	// makes it impossible to distinguish which group actually matched
-	for i, name := range subexpNames {
-		if name != "" && i < len(matches) {
-			if valueAndPattern, exists := rt.lookup[name]; exists {
-				// Use cached compiled pattern or compile on-demand
-				var individualRegexp CompiledRegexp
-				if valueAndPattern.compiledPattern != nil {
-					individualRegexp = valueAndPattern.compiledPattern
-				} else {
-					// Compile and cache the pattern
-					individualPattern := rt.anchorPattern(valueAndPattern.Pattern)
-					compiledRegexp, err := rt.engine.Compile(individualPattern)
-					if err != nil {
-						continue // Skip invalid patterns
-					}
-					// Cache the compiled pattern (note: this modifies the map entry)
-					valueAndPattern.compiledPattern = compiledRegexp
-					rt.lookup[name] = valueAndPattern
-					individualRegexp = compiledRegexp
-				}
-
-				// Test if this individual pattern matches
-				if individualMatches := individualRegexp.FindStringSubmatch(input); individualMatches != nil {
-					return valueAndPattern.Value, matches, nil
-				}
+	// makes it impossible to distinguish which group actually matched.
+	for _, valueAndPattern := range rt.maplets {
+		// Use cached compiled pattern or compile on-demand
+		var individualRegexp CompiledRegexp
+		if valueAndPattern.compiledPattern != nil {
+			individualRegexp = valueAndPattern.compiledPattern
+		} else {
+			// Compile and cache the pattern
+			individualPattern := rt.anchorPattern(valueAndPattern.Pattern)
+			compiledRegexp, err := rt.engine.Compile(individualPattern)
+			if err != nil {
+				continue // Skip invalid patterns (should never happen)
 			}
+			// Cache the compiled pattern (note: this modifies the map entry)
+			valueAndPattern.compiledPattern = compiledRegexp
+			individualRegexp = compiledRegexp
+		}
+
+		// Test if this individual pattern matches
+		if individualMatches := individualRegexp.FindStringSubmatch(input); individualMatches != nil {
+			return valueAndPattern.Value, individualMatches, nil
 		}
 	}
 

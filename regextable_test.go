@@ -377,3 +377,43 @@ func TestRegexpTable_LookupOrElse(t *testing.T) {
 		}
 	})
 }
+
+func TestRegexpTable_WithCaptureGroups(t *testing.T) {
+	table := NewRegexpTable[string](true, false) // Start anchoring, no end anchoring
+
+	// Add patterns with capture groups
+	err := table.AddPattern(`(\w+)=(\d+)`, "assignment")
+	if err != nil {
+		t.Fatalf("Failed to add assignment pattern: %v", err)
+	}
+
+	err = table.AddPattern(`func\s+(\w+)\(([^)]*)\)`, "function")
+	if err != nil {
+		t.Fatalf("Failed to add function pattern: %v", err)
+	}
+
+	err = table.AddPattern(`simple`, "simple_match")
+	if err != nil {
+		t.Fatalf("Failed to add simple pattern: %v", err)
+	}
+
+	// Try matching against `func foo(x)``
+	value, matches, err := table.Lookup("func foo(x)")
+	if err != nil {
+		t.Errorf("Expected match for 'func foo(x)', but got error: %v", err)
+		return
+	}
+	if value != "function" {
+		t.Errorf("Expected 'function' for 'func foo(x)', got %v", value)
+	}
+	if len(matches) != 3 {
+		t.Errorf("Expected 3 matches for 'func foo(x)', got %d: %v", len(matches), matches)
+	} else {
+		if matches[1] != "foo" {
+			t.Errorf("Expected 'foo' as first capture group, got '%s'", matches[1])
+		}
+		if matches[2] != "x" {
+			t.Errorf("Expected 'x' as second capture group, got '%s'", matches[2])
+		}
+	}
+}

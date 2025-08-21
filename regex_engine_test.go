@@ -123,8 +123,8 @@ func TestRegexpTable_WithCustomEngine(t *testing.T) {
 
 	// Verify the pattern was formatted with .NET syntax
 	expectedPattern := "(?<__REGEXPTABLE_1__>hello)"
-	if len(table.patternNames) != 1 || table.patternNames[0] != expectedPattern {
-		t.Errorf("Expected pattern %q, got %q", expectedPattern, table.patternNames[0])
+	if len(table.maplets) != 1 || table.maplets[0].namedPattern != expectedPattern {
+		t.Errorf("Expected pattern %q, got %q", expectedPattern, table.maplets[0].namedPattern)
 	}
 }
 
