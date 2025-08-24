@@ -2,11 +2,22 @@
 
 Following the style in https://keepachangelog.com/en/1.0.0/
 
-## [Unreleased]
+## [0.1.2]
 
-Nothing yet.
+### Fixed
 
-## [0.1.0] - 2025-08-19
+- Match groups inside key-regexes are now correctly matched.
+- Documentation for integrating with other regexp engines is accurate.
+
+### Improved
+
+- Enhanced documentation for `CompiledRegexp` interface methods with detailed explanations:
+  - `FindStringSubmatch()` now explains the 1:1 correspondence with `SubexpNames()`
+  - `SubexpNames()` now includes comprehensive behavior description matching Go's `regexp.SubexpNames()`
+  - Added practical guidance on counting capture groups using parentheses in patterns
+- Clarified that `CompiledRegexp` interface enables pluggable regexp engines
+
+## [0.1.1] - 2025-08-19
 
 Initial release of the RegexpTable library for Go.
 
